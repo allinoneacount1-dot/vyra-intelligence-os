@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "start": "vite start"
+    "dev": "vinxi dev",
+    "build": "vinxi build",
+    "start": "vinxi start"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.120.3",
@@ -30,7 +30,6 @@
     "tailwindcss": "^4.1.5",
     "@tailwindcss/vite": "^4.1.5",
     "typescript": "^5.7.2",
-    "vite": "^6.3.4",
-    "nitro": "^2.11.12"
+    "vite": "^6.3.4"
   }
 }

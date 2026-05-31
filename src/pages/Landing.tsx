@@ -12,18 +12,14 @@ export default function LandingPage({ navigate }: { navigate: (to: string) => vo
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="mb-8">
-          <img src="/vyra-logo.svg" alt="VYRA" className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_30px_rgba(99,102,241,0.4)]" />
+          <img src="/vyra-logo-new.png" alt="VYRA" className="w-48 h-48 object-contain mx-auto drop-shadow-[0_0_30px_rgba(99,102,241,0.4)]" />
         </motion.div>
 
-        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="text-6xl md:text-8xl font-black tracking-tighter mb-4">
-          <span className="bg-gradient-to-r from-vyra-accent via-vyra-cyan to-vyra-green bg-clip-text text-transparent">VYRA</span>
-        </motion.h1>
-
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }} className="text-xl md:text-2xl text-vyra-text-dim text-center max-w-2xl mb-2 font-light">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.3 }} className="text-xl md:text-2xl text-vyra-text-dim text-center max-w-2xl mb-2 font-light">
           Multi-Chain Liquidity Intelligence OS
         </motion.p>
 
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.5 }} className="text-sm text-vyra-text-dim text-center max-w-xl mb-12">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }} className="text-sm text-vyra-text-dim text-center max-w-xl mb-12">
           🧠 AI Prediction Brain &nbsp;•&nbsp; 🤖 Autonomous Agent Society &nbsp;•&nbsp; 🌐 4 Chains &nbsp;•&nbsp; ⚡ Real-time Alpha
         </motion.p>
 
@@ -49,10 +45,6 @@ export default function LandingPage({ navigate }: { navigate: (to: string) => vo
               <div className="text-xs text-vyra-text-dim">{stat.label}</div>
             </div>
           ))}
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 1 }} className="absolute bottom-8 text-xs text-vyra-text-dim/50">
-          Built with Vite • React 19 • Tailwind 4 • Framer Motion
         </motion.div>
       </div>
     </div>

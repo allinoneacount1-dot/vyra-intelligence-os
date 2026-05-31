@@ -57,7 +57,7 @@ function Sidebar({ path, navigate }: { path: string; navigate: (to: string) => v
     <aside className="w-64 bg-vyra-surface border-r border-vyra-border flex flex-col shrink-0">
       <button onClick={() => navigate("/")} className="p-6 border-b border-vyra-border block text-left">
         <div className="flex items-center gap-3">
-          <img src="/vyra-logo.svg" alt="VYRA" className="w-10 h-10 object-contain rounded-lg" />
+          <img src="/vyra-logo-new.png" alt="VYRA" className="w-10 h-10 object-contain rounded-lg" />
           <div>
             <h1 className="text-lg font-bold tracking-wider bg-gradient-to-r from-vyra-accent to-vyra-cyan bg-clip-text text-transparent">VYRA</h1>
             <p className="text-[10px] text-vyra-text-dim tracking-widest uppercase">Intelligence OS</p>

@@ -7,6 +7,9 @@ import type { Chain, ChainEvent, EventType } from "./chain-adapters/types";
 const DEXSCREENER = "https://api.dexscreener.com";
 const COINGECKO = "https://api.coingecko.com/api/v3";
 
+// --- Alchemy RPC endpoints ---
+const ALCHEMY_BNB_RPC = "https://bnb-mainnet.g.alchemy.com/v2/bqmywPuPHgG5yWyUew4tp";
+
 // --- Chain mapping ---
 const CHAIN_DEX_IDS: Record<Chain, string> = {
   SOL: "solana",
@@ -47,12 +50,12 @@ function setCache<T>(key: string, data: T): void {
 let lastFetchTime = 0;
 const MIN_FETCH_INTERVAL = 1000; // 1 second between fetches
 
-async function rateLimitedFetch(url: string): Promise<Response> {
+async function rateLimitedFetch(url: string, options?: RequestInit): Promise<Response> {
   const now = Date.now();
   const wait = Math.max(0, MIN_FETCH_INTERVAL - (now - lastFetchTime));
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   lastFetchTime = Date.now();
-  return fetch(url);
+  return fetch(url, options);
 }
 
 // --- Types ---
@@ -467,4 +470,329 @@ export function getChainDisplayName(chainId: string): string {
 
 export function getChainColor(chainId: string): string {
   return CHAIN_COLORS[chainId] || "#6366f1";
+}
+
+// ============================================================
+// BNB On-Chain Data via Alchemy
+// ============================================================
+
+export interface BNBTxLog {
+  address: string;
+  topics: string[];
+  data: string;
+  blockNumber: string;
+  transactionHash: string;
+  blockHash: string;
+  logIndex: string;
+  transactionIndex: string;
+}
+
+export interface BNBTxReceipt {
+  transactionHash: string;
+  blockNumber: string;
+  blockHash: string;
+  from: string;
+  to: string;
+  gasUsed: string;
+  status: string;
+  logs: BNBTxLog[];
+  value?: string;
+}
+
+export interface BNBBlock {
+  number: string;
+  hash: string;
+  timestamp: string;
+  transactions: string[];
+}
+
+// Fetch latest BNB block number
+export async function fetchBNBNumber(): Promise<number> {
+  const cacheKey = "bnb_block_number";
+  const cached = getCached<number>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await rateLimitedFetch(ALCHEMY_BNB_RPC, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+    });
+    if (!res.ok) throw new Error(`Alchemy BNB ${res.status}`);
+    const data = await res.json();
+    const blockNum = parseInt(data.result, 16);
+    setCache(cacheKey, blockNum);
+    return blockNum;
+  } catch (e) {
+    console.warn("fetchBNBNumber failed:", e);
+    return 0;
+  }
+}
+
+// Fetch BNB block with transactions
+export async function fetchBNBBlock(blockNumber: string): Promise<BNBBlock | null> {
+  try {
+    const res = await rateLimitedFetch(ALCHEMY_BNB_RPC, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "eth_getBlockByNumber",
+        params: [blockNumber, false],
+      }),
+    });
+    if (!res.ok) throw new Error(`Alchemy BNB block ${res.status}`);
+    const data = await res.json();
+    if (!data.result) return null;
+    return {
+      number: data.result.number,
+      hash: data.result.hash,
+      timestamp: data.result.timestamp,
+      transactions: data.result.transactions || [],
+    };
+  } catch (e) {
+    console.warn("fetchBNBBlock failed:", e);
+    return null;
+  }
+}
+
+// Fetch BNB transaction receipt
+export async function fetchBNBTxReceipt(txHash: string): Promise<BNBTxReceipt | null> {
+  try {
+    const res = await rateLimitedFetch(ALCHEMY_BNB_RPC, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "eth_getTransactionReceipt",
+        params: [txHash],
+      }),
+    });
+    if (!res.ok) throw new Error(`Alchemy BNB receipt ${res.status}`);
+    const data = await res.json();
+    if (!data.result) return null;
+    return data.result;
+  } catch (e) {
+    console.warn("fetchBNBTxReceipt failed:", e);
+    return null;
+  }
+}
+
+// Fetch BNB gas price
+export async function fetchBNBGasPrice(): Promise<string> {
+  const cacheKey = "bnb_gas_price";
+  const cached = getCached<string>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await rateLimitedFetch(ALCHEMY_BNB_RPC, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_gasPrice", params: [] }),
+    });
+    if (!res.ok) throw new Error(`Alchemy BNB gas ${res.status}`);
+    const data = await res.json();
+    const gasPrice = parseInt(data.result, 16).toString();
+    setCache(cacheKey, gasPrice);
+    return gasPrice;
+  } catch (e) {
+    console.warn("fetchBNBGasPrice failed:", e);
+    return "0";
+  }
+}
+
+// Fetch BNB balance for an address
+export async function fetchBNBBalance(address: string): Promise<string> {
+  try {
+    const res = await rateLimitedFetch(ALCHEMY_BNB_RPC, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "eth_getBalance",
+        params: [address, "latest"],
+      }),
+    });
+    if (!res.ok) throw new Error(`Alchemy BNB balance ${res.status}`);
+    const data = await res.json();
+    return parseInt(data.result, 16).toString();
+  } catch (e) {
+    console.warn("fetchBNBBalance failed:", e);
+    return "0";
+  }
+}
+
+// Fetch latest BNB on-chain activity (recent blocks)
+export async function fetchBNBActivity(): Promise<{
+  latestBlock: number;
+  gasPrice: string;
+  recentTxCount: number;
+  blockTime: number;
+}> {
+  try {
+    const [blockNum, gasPrice] = await Promise.all([
+      fetchBNBNumber(),
+      fetchBNBGasPrice(),
+    ]);
+
+    // Get last 5 blocks to count txs
+    let totalTxs = 0;
+    const blocks: BNBBlock[] = [];
+    for (let i = 0; i < 5 && blockNum - i > 0; i++) {
+      const block = await fetchBNBBlock("0x" + (blockNum - i).toString(16));
+      if (block) {
+        blocks.push(block);
+        totalTxs += block.transactions.length;
+      }
+    }
+
+    // Calculate avg block time
+    let blockTime = 3; // default BNB block time
+    if (blocks.length >= 2) {
+      const t1 = parseInt(blocks[0].timestamp, 16);
+      const t2 = parseInt(blocks[1].timestamp, 16);
+      blockTime = Math.abs(t1 - t2);
+    }
+
+    return {
+      latestBlock: blockNum,
+      gasPrice: (parseInt(gasPrice) / 1e9).toFixed(2) + " Gwei",
+      recentTxCount: totalTxs,
+      blockTime,
+    };
+  } catch (e) {
+    console.warn("fetchBNBActivity failed:", e);
+    return { latestBlock: 0, gasPrice: "0", recentTxCount: 0, blockTime: 3 };
+  }
+}
+
+// ============================================================
+// DEX Screener Trending Data
+// ============================================================
+
+export interface TrendingToken {
+  chainId: string;
+  tokenAddress: string;
+  symbol: string;
+  name: string;
+  priceUsd: number;
+  priceChangeH24: number;
+  volumeH24: number;
+  liquidityUsd: number;
+  fdv: number;
+  pairAddress: string;
+  dexId: string;
+  iconUrl?: string;
+  boostsActive: number;
+  txnsH24Buys: number;
+  txnsH24Sells: number;
+  priceChangeM5: number;
+  priceChangeH1: number;
+  priceChangeH6: number;
+  pairCreatedAt?: number;
+}
+
+// Fetch trending tokens from DEX Screener (search popular pairs)
+export async function fetchTrendingTokens(): Promise<TrendingToken[]> {
+  const cacheKey = "trending_tokens";
+  const cached = getCached<TrendingToken[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // Fetch top pairs from each chain, sorted by volume
+    const chainIds = ["solana", "ethereum", "base", "binance-smart-chain"];
+    const allPairs: DEXPair[] = [];
+
+    await Promise.all(
+      chainIds.map(async (chainId) => {
+        try {
+          const res = await rateLimitedFetch(`${DEXSCREENER}/latest/dex/pairs/${chainId}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const pairs = (data.pairs || [])
+            .filter((p: DEXPair) => (p.volume?.h24 || 0) > 10000 && (p.liquidity?.usd || 0) > 5000)
+            .sort((a: DEXPair, b: DEXPair) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
+            .slice(0, 20);
+          allPairs.push(...pairs);
+        } catch (e) {
+          console.warn(`fetchTrendingTokens ${chainId} failed:`, e);
+        }
+      })
+    );
+
+    // Also fetch from search for popular tokens
+    const searchQueries = ["SOL", "ETH", "BTC", "USDT", "USDC"];
+    await Promise.all(
+      searchQueries.map(async (q) => {
+        try {
+          const res = await rateLimitedFetch(`${DEXSCREENER}/latest/dex/search?q=${q}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const pairs = (data.pairs || [])
+            .filter((p: DEXPair) => (p.volume?.h24 || 0) > 50000)
+            .slice(0, 5);
+          // Avoid duplicates
+          for (const p of pairs) {
+            if (!allPairs.find((existing) => existing.pairAddress === p.pairAddress)) {
+              allPairs.push(p);
+            }
+          }
+        } catch (e) {
+          // silent
+        }
+      })
+    );
+
+    // Convert to trending tokens
+    const trending: TrendingToken[] = allPairs.map((p) => ({
+      chainId: p.chainId,
+      tokenAddress: p.baseToken?.address || "",
+      symbol: p.baseToken?.symbol || "UNKNOWN",
+      name: p.baseToken?.name || "",
+      priceUsd: parseFloat(p.priceUsd || "0"),
+      priceChangeH24: p.priceChange?.h24 || 0,
+      volumeH24: p.volume?.h24 || 0,
+      liquidityUsd: p.liquidity?.usd || 0,
+      fdv: p.fdv || 0,
+      pairAddress: p.pairAddress,
+      dexId: p.dexId,
+      iconUrl: p.info?.imageUrl,
+      boostsActive: p.boosts?.active || 0,
+      txnsH24Buys: p.txns?.h24?.buys || 0,
+      txnsH24Sells: p.txns?.h24?.sells || 0,
+      priceChangeM5: p.priceChange?.m5 || 0,
+      priceChangeH1: p.priceChange?.h1 || 0,
+      priceChangeH6: p.priceChange?.h6 || 0,
+      pairCreatedAt: p.pairCreatedAt,
+    }));
+
+    // Sort by volume * price change momentum
+    trending.sort((a, b) => {
+      const scoreA = a.volumeH24 * (1 + Math.abs(a.priceChangeH24) / 100);
+      const scoreB = b.volumeH24 * (1 + Math.abs(b.priceChangeH24) / 100);
+      return scoreB - scoreA;
+    });
+
+    const result = trending.slice(0, 50);
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.warn("fetchTrendingTokens failed:", e);
+    return [];
+  }
+}
+
+// Fetch DEX Screener token profiles (new listings)
+export async function fetchNewTokenProfiles(): Promise<any[]> {
+  const cacheKey = "new_token_profiles";
+  const cached = getCached<any[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await rateLimitedFetch(`${DEXSCREENER}/token-profiles/latest/v1`);
+    if (!res.ok) throw new Error(`DEX Screener Profiles ${res.status}`);
+    const data = await res.json();
+    setCache(cacheKey, data);
+    return data;
+  } catch (e) {
+    console.warn("fetchNewTokenProfiles failed:", e);
+    return [];
+  }
 }

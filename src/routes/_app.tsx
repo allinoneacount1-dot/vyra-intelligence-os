@@ -9,6 +9,7 @@ export const Route = createFileRoute("/_app")({
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", emoji: "📊", desc: "Intelligence Overview" },
   { to: "/signals", label: "Signals", emoji: "⚡", desc: "Real-time Signal Stream" },
+  { to: "/trending", label: "Trending", emoji: "🔥", desc: "DEX Trending Tokens" },
   { to: "/agents", label: "Agents", emoji: "🤖", desc: "Agent Society" },
   { to: "/heatmap", label: "Heatmap", emoji: "🗺️", desc: "Liquidity Map" },
   { to: "/copilot", label: "Copilot", emoji: "🧠", desc: "AI Assistant" },

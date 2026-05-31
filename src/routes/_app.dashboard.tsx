@@ -5,6 +5,8 @@ import { useRealData } from "../lib/use-real-data";
 import type { Chain } from "../lib/chain-adapters/types";
 import { DEXBoostPanel } from "../components/DEXBoostPanel";
 import { DEXAdsPanel } from "../components/DEXAdsPanel";
+import { DEXTrendingPanel } from "../components/DEXTrendingPanel";
+import { BNBOnChainPanel } from "../components/BNBOnChainPanel";
 import { formatUSD } from "../lib/real-data-engine";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -58,11 +60,15 @@ function Dashboard() {
         ))}
       </div>
 
-      {/* DEX Screener Boost + Ads Panels — PROMINENT */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* DEX Screener Panels — Boost + Ads + Trending */}
+      <div className="grid grid-cols-3 gap-4">
         <DEXBoostPanel />
         <DEXAdsPanel />
+        <DEXTrendingPanel />
       </div>
+
+      {/* BNB On-Chain via Alchemy */}
+      <BNBOnChainPanel />
 
       {/* Feature Vectors + Event Stream */}
       <div className="grid grid-cols-2 gap-4">

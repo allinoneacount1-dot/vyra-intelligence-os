@@ -27,9 +27,11 @@ function LandingPage() {
           transition={{ duration: 0.8 }}
           className="mb-8"
         >
-          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-vyra-accent via-vyra-purple to-vyra-cyan flex items-center justify-center text-4xl font-black glow-accent mx-auto">
-            V
-          </div>
+          <img
+            src="/vyra-logo.jpg"
+            alt="VYRA"
+            className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_30px_rgba(99,102,241,0.4)]"
+          />
         </motion.div>
 
         {/* Title */}

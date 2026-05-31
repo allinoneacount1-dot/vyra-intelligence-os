@@ -24,9 +24,11 @@ function AppLayout() {
         {/* Logo */}
         <Link to="/" className="p-6 border-b border-vyra-border block">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-vyra-accent to-vyra-cyan flex items-center justify-center text-lg font-bold glow-accent">
-              V
-            </div>
+            <img
+              src="/vyra-logo.jpg"
+              alt="VYRA"
+              className="w-10 h-10 object-contain rounded-lg"
+            />
             <div>
               <h1 className="text-lg font-bold tracking-wider bg-gradient-to-r from-vyra-accent to-vyra-cyan bg-clip-text text-transparent">
                 VYRA

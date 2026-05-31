@@ -17,6 +17,7 @@ export const Route = createRootRoute({
       { name: "theme-color", content: "#0a0a0f" },
     ],
     links: [
+      { rel: "icon", href: "/vyra-logo.jpg", type: "image/jpeg" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" },

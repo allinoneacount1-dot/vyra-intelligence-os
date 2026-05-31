@@ -54,7 +54,7 @@ export function useSignalStore() {
   });
 
   const featureHistoryRef = useRef<LiquidityFeatures[]>([]);
-  const updateIntervalRef = useRef<ReturnType<typeof setInterval>>();
+  const updateIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const updateState = useCallback(() => {
     const events = simulator.getRecent(500);

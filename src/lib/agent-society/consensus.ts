@@ -20,19 +20,19 @@ export function runConsensus(signals: AgentSignal[]): ConsensusResult {
     const weight = rep ? rep.trustWeight * signal.confidence : 0.5;
 
     let decision: string;
-    if (signal.role === "risk" && signal.strength > 0.5) {
+    if (signal.agentRole === "risk" && signal.strength > 0.5) {
       decision = "ALERT";
-    } else if (signal.role === "whale" && signal.strength > 0.6) {
+    } else if (signal.agentRole === "whale" && signal.strength > 0.6) {
       decision = signal.signal.includes("accumulating") ? "BUY" : "SELL";
-    } else if (signal.role === "scout" && signal.strength > 0.5) {
+    } else if (signal.agentRole === "scout" && signal.strength > 0.5) {
       decision = "ROTATE";
-    } else if (signal.role === "narrative" && signal.strength > 0.6) {
+    } else if (signal.agentRole === "narrative" && signal.strength > 0.6) {
       decision = "BUY";
     } else {
       decision = "HOLD";
     }
 
-    votes.push({ decision, weight, agentId: signal.agentId, role: signal.role });
+    votes.push({ decision, weight, agentId: signal.agentId, role: signal.agentRole });
   }
 
   // Aggregate weighted votes

@@ -1,5 +1,5 @@
 // VYRA Agent Society — Type definitions
-import type { AgentSignal, AgentReputation, LiquidityFeatures, ChainEvent } from "../chain-adapters/types";
+import type { AgentSignal, AgentReputation, LiquidityFeatures, ChainEvent, ConsensusResult } from "../chain-adapters/types";
 
 export interface Agent {
   id: string;
@@ -28,4 +28,4 @@ export interface ConsensusVote {
   reasoning: string;
 }
 
-export type { AgentSignal, AgentReputation };
+export type { AgentSignal, AgentReputation, LiquidityFeatures, ChainEvent, ConsensusResult };

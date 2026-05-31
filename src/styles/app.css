@@ -1,0 +1,107 @@
+// VYRA CSS — Dark cyberpunk theme for Intelligence OS
+@import "tailwindcss";
+
+@theme {
+  --color-vyra-bg: #0a0a0f;
+  --color-vyra-surface: #12121a;
+  --color-vyra-card: #1a1a28;
+  --color-vyra-border: #2a2a3e;
+  --color-vyra-accent: #6366f1;
+  --color-vyra-accent-light: #818cf8;
+  --color-vyra-cyan: #22d3ee;
+  --color-vyra-green: #10b981;
+  --color-vyra-red: #ef4444;
+  --color-vyra-yellow: #f59e0b;
+  --color-vyra-purple: #a855f7;
+  --color-vyra-text: #e2e8f0;
+  --color-vyra-text-dim: #64748b;
+  --color-vyra-glow: rgba(99, 102, 241, 0.3);
+
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* Global base */
+body {
+  background: var(--color-vyra-bg);
+  color: var(--color-vyra-text);
+  font-family: var(--font-mono);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-vyra-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-vyra-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-vyra-accent);
+}
+
+/* Glow effects */
+.glow-accent {
+  box-shadow: 0 0 20px var(--color-vyra-glow), 0 0 40px rgba(99, 102, 241, 0.1);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.2), 0 0 40px rgba(34, 211, 238, 0.1);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+/* Pulse animation */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Scan line effect */
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.scan-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 50%, rgba(99, 102, 241, 0.03) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+/* Signal flash */
+@keyframes signal-flash {
+  0% { background-color: rgba(99, 102, 241, 0.1); }
+  50% { background-color: rgba(99, 102, 241, 0.05); }
+  100% { background-color: transparent; }
+}
+
+.signal-flash {
+  animation: signal-flash 0.5s ease-out;
+}
+
+/* Number counter */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.count-up {
+  animation: count-up 0.3s ease-out;
+}

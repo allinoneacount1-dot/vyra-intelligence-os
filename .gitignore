@@ -1,0 +1,9 @@
+node_modules
+dist
+.vercel
+.vite
+.output
+.nitro
+*.tsbuildinfo
+.env
+.env.local

@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useSignalStore } from "../lib/signal-store";
 import type { Chain, LiquidityFeatures } from "../lib/chain-adapters/types";
+import { DEXBoostPanel } from "../components/DEXBoostPanel";
+import { DEXAdsPanel } from "../components/DEXAdsPanel";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: Dashboard,
@@ -52,6 +54,12 @@ function Dashboard() {
       <div className="grid grid-cols-2 gap-4">
         <TemporalPatternsPanel patterns={store.temporalPatterns} />
         <EventStream events={store.events.slice(-15)} />
+      </div>
+
+      {/* DEX Screener Panels */}
+      <div className="grid grid-cols-2 gap-4">
+        <DEXBoostPanel />
+        <DEXAdsPanel />
       </div>
 
       {/* Stats Bar */}

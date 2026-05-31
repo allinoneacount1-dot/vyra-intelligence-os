@@ -1,5 +1,4 @@
-// VYRA DEX Screener Boost Panel
-// Real-time boosted tokens from DEX Screener
+// VYRA DEX Screener Boost Panel — Full Animation
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,7 +9,14 @@ import {
   formatPercent,
   getChainDisplayName,
   getChainColor,
-} from "../lib/dexscreener-service";
+} from "../dexscreener-service";
+
+const stagger = { animate: { transition: { staggerChildren: 0.04 } } };
+const rowVariant = {
+  initial: { opacity: 0, x: -20, scale: 0.95 },
+  animate: { opacity: 1, x: 0, scale: 1 },
+  exit: { opacity: 0, x: 20, scale: 0.95 },
+};
 
 export function DEXBoostPanel() {
   const [boosts, setBoosts] = useState<BoostWithPrice[]>([]);
@@ -21,7 +27,7 @@ export function DEXBoostPanel() {
   const loadBoosts = useCallback(async () => {
     try {
       const raw = await fetchLatestBoosts();
-      const limited = raw.slice(0, 25);
+      const limited = raw.slice(0, 20);
       const enriched = await fetchBoostsWithPrices(limited);
       setBoosts(enriched);
       setLastUpdate(new Date());
@@ -34,7 +40,7 @@ export function DEXBoostPanel() {
 
   useEffect(() => {
     loadBoosts();
-    const interval = setInterval(loadBoosts, 60000); // refresh every 60s
+    const interval = setInterval(loadBoosts, 60000);
     return () => clearInterval(interval);
   }, [loadBoosts]);
 
@@ -43,77 +49,110 @@ export function DEXBoostPanel() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-      className="bg-vyra-card border border-vyra-border rounded-xl p-5"
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.5, type: "spring", stiffness: 200 }}
+      whileHover={{ borderColor: "rgba(99,102,241,0.3)" }}
+      className="bg-vyra-card border border-vyra-border rounded-xl p-5 overflow-hidden relative"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold flex items-center gap-2">
-          🚀 DEX Screener Boosts
-          <span className="text-[10px] px-1.5 py-0.5 bg-vyra-green/20 text-vyra-green rounded-full font-normal">
-            LIVE
-          </span>
-        </h3>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-vyra-text-dim">
-            {lastUpdate.toLocaleTimeString()}
-          </span>
-          <button
-            onClick={loadBoosts}
-            className="text-[10px] px-2 py-1 bg-vyra-bg rounded hover:bg-vyra-surface transition-colors"
-          >
-            ↻ Refresh
-          </button>
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-vyra-accent/5 to-transparent pointer-events-none"
+        animate={{ opacity: [0.3, 0.6, 0.3] }}
+        transition={{ repeat: Infinity, duration: 3 }}
+      />
+
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold flex items-center gap-2">
+            🚀 DEX Boosts
+            <motion.span
+              className="text-[10px] px-1.5 py-0.5 bg-vyra-green/20 text-vyra-green rounded-full font-normal"
+              animate={{ opacity: [1, 0.5, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              LIVE
+            </motion.span>
+          </h3>
+          <div className="flex items-center gap-2">
+            <motion.span
+              className="text-[10px] text-vyra-text-dim"
+              key={lastUpdate.getTime()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              {lastUpdate.toLocaleTimeString()}
+            </motion.span>
+            <motion.button
+              onClick={loadBoosts}
+              whileHover={{ scale: 1.1, rotate: 180 }}
+              whileTap={{ scale: 0.9 }}
+              className="text-[10px] px-2 py-1 bg-vyra-bg rounded hover:bg-vyra-surface transition-colors"
+            >
+              ↻
+            </motion.button>
+          </div>
         </div>
-      </div>
 
-      {/* Chain Filter */}
-      <div className="flex gap-1 mb-3 flex-wrap">
-        {chains.map((chain) => (
-          <button
-            key={chain}
-            onClick={() => setFilter(chain)}
-            className={`text-[10px] px-2 py-1 rounded-full transition-all ${
-              filter === chain
-                ? "bg-vyra-accent/20 text-vyra-accent-light border border-vyra-accent/30"
-                : "bg-vyra-bg text-vyra-text-dim hover:text-vyra-text"
-            }`}
-          >
-            {chain === "all" ? "All" : chain}
-          </button>
-        ))}
-      </div>
-
-      {/* Boost List */}
-      {loading ? (
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-14 bg-vyra-bg rounded-lg animate-pulse" />
+        <div className="flex gap-1 mb-3 flex-wrap">
+          {chains.map((chain) => (
+            <motion.button
+              key={chain}
+              onClick={() => setFilter(chain)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`text-[10px] px-2 py-1 rounded-full transition-all ${
+                filter === chain
+                  ? "bg-vyra-accent/20 text-vyra-accent-light border border-vyra-accent/30"
+                  : "bg-vyra-bg text-vyra-text-dim hover:text-vyra-text"
+              }`}
+              layout
+            >
+              {chain === "all" ? "All" : chain}
+            </motion.button>
           ))}
         </div>
-      ) : filtered.length === 0 ? (
-        <p className="text-xs text-vyra-text-dim text-center py-4">No boosted tokens found</p>
-      ) : (
-        <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
-          <AnimatePresence>
-            {filtered.map((boost, i) => (
-              <BoostRow key={`${boost.chainId}-${boost.tokenAddress}`} boost={boost} index={i} />
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
 
-      {/* Footer Stats */}
-      {!loading && boosts.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-vyra-border/50 flex items-center justify-between text-[10px] text-vyra-text-dim">
-          <span>{boosts.length} boosted tokens</span>
-          <span>
-            {new Set(boosts.map((b) => b.chainId)).size} chains
-          </span>
-        </div>
-      )}
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="h-14 bg-vyra-bg rounded-lg"
+                animate={{ opacity: [0.3, 0.7, 0.3] }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.1 }}
+              />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-xs text-vyra-text-dim text-center py-4"
+          >
+            No boosted tokens
+          </motion.p>
+        ) : (
+          <motion.div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1" {...stagger} initial="initial" animate="animate">
+            <AnimatePresence mode="popLayout">
+              {filtered.map((boost, i) => (
+                <BoostRow key={`${boost.chainId}-${boost.tokenAddress}`} boost={boost} index={i} />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {!loading && boosts.length > 0 && (
+          <motion.div
+            className="mt-3 pt-3 border-t border-vyra-border/50 flex items-center justify-between text-[10px] text-vyra-text-dim"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <span>{filtered.length} boosted</span>
+            <span>{new Set(boosts.map((b) => b.chainId)).size} chains</span>
+          </motion.div>
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -121,85 +160,80 @@ export function DEXBoostPanel() {
 function BoostRow({ boost, index }: { boost: BoostWithPrice; index: number }) {
   const chainColor = getChainColor(boost.chainId);
   const chainName = getChainDisplayName(boost.chainId);
-  const isPositive = (boost.priceChangeH24 || 0) >= 0;
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
+      variants={rowVariant}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       transition={{ duration: 0.3, delay: index * 0.03 }}
-      className="flex items-center gap-3 p-2.5 bg-vyra-bg/50 rounded-lg hover:bg-vyra-bg transition-all group cursor-pointer border border-transparent hover:border-vyra-border/50"
+      whileHover={{ scale: 1.02, x: 4, backgroundColor: "rgba(99,102,241,0.08)" }}
+      className="flex items-center gap-3 p-2.5 bg-vyra-bg/50 rounded-lg border border-transparent hover:border-vyra-border/50 cursor-pointer group"
     >
-      {/* Token Icon */}
-      <div className="w-8 h-8 rounded-lg bg-vyra-surface flex items-center justify-center overflow-hidden shrink-0">
+      <motion.div
+        className="w-8 h-8 rounded-lg bg-vyra-surface flex items-center justify-center overflow-hidden shrink-0"
+        whileHover={{ rotate: 360 }}
+        transition={{ duration: 0.5 }}
+      >
         {boost.iconUrl ? (
-          <img src={boost.iconUrl} alt={boost.symbol} className="w-full h-full object-cover" />
+          <motion.img
+            src={boost.iconUrl}
+            alt={boost.symbol}
+            className="w-full h-full object-cover"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          />
         ) : (
-          <span className="text-xs font-bold text-vyra-text-dim">
-            {boost.symbol.slice(0, 2)}
-          </span>
+          <span className="text-xs font-bold text-vyra-text-dim">{boost.symbol.slice(0, 2)}</span>
         )}
-      </div>
+      </motion.div>
 
-      {/* Token Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold truncate">{boost.symbol}</span>
-          <span
-            className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
+          <motion.span
+            className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0"
             style={{ backgroundColor: chainColor + "20", color: chainColor }}
+            whileHover={{ scale: 1.1 }}
           >
             {chainName}
-          </span>
-          {boost.dexId && (
-            <span className="text-[9px] text-vyra-text-dim">{boost.dexId}</span>
-          )}
+          </motion.span>
         </div>
-        {boost.name && (
-          <p className="text-[10px] text-vyra-text-dim truncate">{boost.name}</p>
-        )}
       </div>
 
-      {/* Price */}
-      <div className="text-right shrink-0">
-        <div className="text-xs font-mono">
-          {boost.priceUsd ? formatUSD(boost.priceUsd) : "—"}
-        </div>
+      <motion.div
+        className="text-right shrink-0"
+        key={boost.priceUsd}
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="text-xs font-mono">{boost.priceUsd ? formatUSD(boost.priceUsd) : "—"}</div>
         {boost.priceChangeH24 !== undefined && (
-          <div className={`text-[10px] font-mono ${isPositive ? "text-vyra-green" : "text-vyra-red"}`}>
+          <motion.div
+            className={`text-[10px] font-mono ${(boost.priceChangeH24 || 0) >= 0 ? "text-vyra-green" : "text-vyra-red"}`}
+            key={boost.priceChangeH24}
+            initial={{ scale: 1.3 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring" }}
+          >
             {formatPercent(boost.priceChangeH24)}
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
-      {/* Volume */}
       <div className="text-right shrink-0 hidden sm:block">
-        <div className="text-[10px] text-vyra-text-dim">Vol 24h</div>
-        <div className="text-[10px] font-mono">{boost.volumeH24 ? formatUSD(boost.volumeH24) : "—"}</div>
-      </div>
-
-      {/* Boost Amount */}
-      <div className="text-right shrink-0">
-        <div className="text-[10px] text-vyra-text-dim">Boost</div>
-        <div className="text-[10px] font-mono text-vyra-accent">
-          {boost.amount ? `$${boost.amount.toLocaleString()}` : "—"}
-        </div>
-      </div>
-
-      {/* Link */}
-      {boost.url && (
-        <a
-          href={boost.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-vyra-text-dim hover:text-vyra-accent transition-colors opacity-0 group-hover:opacity-100"
-          onClick={(e) => e.stopPropagation()}
+        <motion.div
+          className="text-[10px] font-mono text-vyra-accent"
+          key={boost.amount}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", delay: 0.1 }}
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
-      )}
+          {boost.amount ? `$${boost.amount.toLocaleString()}` : "—"}
+        </motion.div>
+      </div>
     </motion.div>
   );
 }

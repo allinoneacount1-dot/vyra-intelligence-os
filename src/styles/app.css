@@ -105,3 +105,65 @@ body {
 .count-up {
   animation: count-up 0.3s ease-out;
 }
+
+/* Shimmer loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(99,102,241,0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Border glow pulse */
+@keyframes border-glow-pulse {
+  0%, 100% { border-color: rgba(99,102,241,0.2); }
+  50% { border-color: rgba(99,102,241,0.5); }
+}
+
+.border-glow-pulse {
+  animation: border-glow-pulse 2s ease-in-out infinite;
+}
+
+/* Data stream animation */
+@keyframes data-stream {
+  0% { opacity: 0; transform: translateX(-10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.data-stream {
+  animation: data-stream 0.3s ease-out;
+}
+
+/* Row highlight on update */
+@keyframes row-highlight {
+  0% { background-color: rgba(99,102,241,0.15); }
+  100% { background-color: transparent; }
+}
+
+.row-highlight {
+  animation: row-highlight 1s ease-out;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Rotate slow */
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-rotate-slow {
+  animation: rotate-slow 8s linear infinite;
+}

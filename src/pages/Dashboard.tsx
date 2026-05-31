@@ -1,214 +1,348 @@
-import { motion } from "framer-motion";
-import { useSignalStore } from "../lib/signal-store";
-import type { Chain, LiquidityFeatures } from "../lib/chain-adapters/types";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  fetchAllChainData, fetchDEXPairs, generateWhaleEvents, analyzeWithAgents,
+  formatUSD, formatPercent, formatNumber, timeAgo,
+  type ChainData, type DEXPair, type WhaleEvent, type AgentAnalysis,
+} from "../lib/real-data";
 
-export default function DashboardPage() {
-  const store = useSignalStore();
+// ============ MAIN DASHBOARD ============
+export default function DashboardPage({ navigate }: { navigate: (to: string) => void }) {
+  const [chainData, setChainData] = useState<Record<string, ChainData>>({});
+  const [dexPairs, setDexPairs] = useState<Record<string, DEXPair[]>>({});
+  const [whaleEvents, setWhaleEvents] = useState<WhaleEvent[]>([]);
+  const [agents, setAgents] = useState<AgentAnalysis[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(Date.now());
+  const [selectedChain, setSelectedChain] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [chains, solPairs, ethPairs, basePairs, bnbPairs] = await Promise.all([
+        fetchAllChainData(),
+        fetchDEXPairs("solana"),
+        fetchDEXPairs("ethereum"),
+        fetchDEXPairs("base"),
+        fetchDEXPairs("bnb"),
+      ]);
+
+      setChainData(chains);
+      const pairs = { SOL: solPairs, ETH: ethPairs, BASE: basePairs, BNB: bnbPairs };
+      setDexPairs(pairs);
+
+      // Generate whale events from DEX data
+      const allWhales: WhaleEvent[] = [];
+      Object.entries(pairs).forEach(([chain, chainPairs]) => {
+        allWhales.push(...generateWhaleEvents(chainPairs, chain));
+      });
+      setWhaleEvents(allWhales.sort((a, b) => b.usdValue - a.usdValue).slice(0, 30));
+
+      // Run agent analysis
+      setAgents(analyzeWithAgents(chains, pairs, allWhales));
+      setLastUpdate(Date.now());
+    } catch (e) {
+      console.error("Dashboard fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  const totalVolume = Object.values(chainData).reduce((s, c) => s + (c?.volume24h || 0), 0);
+  const totalLiquidity = Object.values(dexPairs).reduce(
+    (s, pairs) => s + pairs.reduce((ps, p) => ps + (p.liquidity?.usd || 0), 0), 0
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-vyra-bg">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-vyra-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-vyra-text-dim">Loading real-time data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Intelligence Dashboard</h1>
-          <p className="text-sm text-vyra-text-dim">Real-time multi-chain liquidity intelligence</p>
+          <p className="text-sm text-vyra-text-dim">
+            Real-time multi-chain liquidity intelligence • Updated {timeAgo(lastUpdate)}
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <RiskBadge level={store.riskLevel} />
           <div className="flex items-center gap-2 px-3 py-1.5 bg-vyra-card rounded-lg border border-vyra-border">
-            <div className={`w-2 h-2 rounded-full ${store.isRunning ? "bg-vyra-green animate-pulse" : "bg-vyra-red"}`} />
-            <span className="text-xs text-vyra-text-dim">{store.isRunning ? "LIVE" : "OFFLINE"}</span>
+            <div className="w-2 h-2 rounded-full bg-vyra-green animate-pulse" />
+            <span className="text-xs text-vyra-text-dim">LIVE</span>
+          </div>
+          <button onClick={fetchData} className="px-3 py-1.5 bg-vyra-card border border-vyra-border rounded-lg text-xs hover:border-vyra-accent/30 transition-all">
+            ↻ Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Chain Cards */}
+      <div className="grid grid-cols-4 gap-4">
+        {(["SOL", "ETH", "BASE", "BNB"] as const).map((chain) => (
+          <ChainCard
+            key={chain}
+            chain={chain}
+            data={chainData[chain]}
+            pairCount={dexPairs[chain]?.length || 0}
+            onClick={() => navigate(`/heatmap?chain=${chain.toLowerCase()}`)}
+          />
+        ))}
+      </div>
+
+      {/* Stats Bar */}
+      <div className="grid grid-cols-5 gap-4">
+        <StatCard label="Total Volume (24h)" value={formatUSD(totalVolume)} icon="💰" />
+        <StatCard label="Total Liquidity" value={formatUSD(totalLiquidity)} icon="🏊" />
+        <StatCard label="DEX Pairs" value={Object.values(dexPairs).reduce((s, p) => s + p.length, 0).toString()} icon="🔄" />
+        <StatCard label="Whale Events" value={whaleEvents.length.toString()} icon="🐋" />
+        <StatCard label="Active Agents" value="4" icon="🤖" />
+      </div>
+
+      {/* Main Content */}
+      <div className="grid grid-cols-3 gap-4">
+        {/* Whale Events Stream */}
+        <div className="col-span-2 bg-vyra-card border border-vyra-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold flex items-center gap-2">🐋 Whale Event Stream</h3>
+            <button onClick={() => navigate("/signals")} className="text-xs text-vyra-accent hover:underline">View All →</button>
+          </div>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            <AnimatePresence>
+              {whaleEvents.slice(0, 15).map((event) => (
+                <WhaleEventRow key={event.id} event={event} />
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Agent Society */}
+        <div className="bg-vyra-card border border-vyra-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold flex items-center gap-2">🤖 Agent Society</h3>
+            <button onClick={() => navigate("/agents")} className="text-xs text-vyra-accent hover:underline">View All →</button>
+          </div>
+          <div className="space-y-3">
+            {agents.map((agent) => (
+              <AgentCard key={agent.agentId} agent={agent} onClick={() => navigate(`/agents?agent=${agent.agentId}`)} />
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        {(["SOL", "ETH", "BASE", "BNB"] as Chain[]).map((chain, i) => (
-          <ChainCard key={chain} chain={chain} volume={store.chainVolumes[chain]} health={store.chainHealth[chain]} delay={i * 0.1} />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <FeaturePanel features={store.features} />
-        <PredictionPanel predictions={store.predictions.slice(0, 3)} />
-        <AgentConsensusPanel result={store.societyResult} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <TemporalPatternsPanel patterns={store.temporalPatterns} />
-        <EventStream events={store.events.slice(-15)} />
-      </div>
-
-      <div className="grid grid-cols-5 gap-4">
-        <StatCard label="Total Events" value={store.eventCount.toString()} icon="📡" />
-        <StatCard label="5m Volume" value={`$${(store.totalVolume / 1000).toFixed(0)}K`} icon="💰" />
-        <StatCard label="Active Chains" value="4" icon="🌐" />
-        <StatCard label="Agents Online" value="4" icon="🤖" />
-        <StatCard label="Predictions" value={store.predictions.length.toString()} icon="🔮" />
+      {/* DEX Pairs by Chain */}
+      <div className="bg-vyra-card border border-vyra-border rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold flex items-center gap-2">🔥 Top DEX Pairs by Liquidity</h3>
+          <div className="flex gap-2">
+            {(["SOL", "ETH", "BASE", "BNB"] as const).map((chain) => (
+              <button
+                key={chain}
+                onClick={() => navigate(`/heatmap?chain=${chain.toLowerCase()}`)}
+                className="px-3 py-1 rounded-lg text-xs font-medium bg-vyra-bg border border-vyra-border hover:border-vyra-accent/30 transition-all"
+              >
+                {chain}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {(["SOL", "ETH", "BASE", "BNB"] as const).map((chain) => (
+            <div key={chain}>
+              <div className="text-xs font-bold mb-2" style={{ color: chain === "SOL" ? "#9945FF" : chain === "ETH" ? "#627EEA" : chain === "BASE" ? "#0052FF" : "#F3BA2F" }}>
+                {chain}
+              </div>
+              <div className="space-y-1.5">
+                {(dexPairs[chain] || []).slice(0, 5).map((pair, i) => (
+                  <DEXPairRow key={i} pair={pair} chain={chain} />
+                ))}
+                {(!dexPairs[chain] || dexPairs[chain].length === 0) && (
+                  <p className="text-[10px] text-vyra-text-dim">No data</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
-function RiskBadge({ level }: { level: string }) {
+// ============ CHAIN CARD ============
+function ChainCard({ chain, data, pairCount, onClick }: {
+  chain: string; data?: ChainData; pairCount: number; onClick: () => void;
+}) {
   const colors: Record<string, string> = {
-    LOW: "bg-vyra-green/20 text-vyra-green border-vyra-green/30",
-    MEDIUM: "bg-vyra-yellow/20 text-vyra-yellow border-vyra-yellow/30",
-    HIGH: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    CRITICAL: "bg-vyra-red/20 text-vyra-red border-vyra-red/30",
+    SOL: "from-purple-500/20 to-green-500/20",
+    ETH: "from-blue-500/20 to-purple-500/20",
+    BASE: "from-blue-400/20 to-cyan-400/20",
+    BNB: "from-yellow-500/20 to-orange-500/20",
   };
-  return <div className={`px-3 py-1.5 rounded-lg border text-xs font-bold ${colors[level] || colors.LOW}`}>RISK: {level}</div>;
-}
+  const borderColors: Record<string, string> = {
+    SOL: "hover:border-purple-500/40",
+    ETH: "hover:border-blue-500/40",
+    BASE: "hover:border-blue-400/40",
+    BNB: "hover:border-yellow-500/40",
+  };
 
-function ChainCard({ chain, volume, health, delay }: { chain: Chain; volume: number; health: number; delay: number }) {
-  const chainColors: Record<Chain, string> = { SOL: "from-purple-500 to-green-400", ETH: "from-blue-500 to-purple-400", BASE: "from-blue-400 to-cyan-400", BNB: "from-yellow-500 to-orange-400" };
-  const chainIcons: Record<Chain, string> = { SOL: "◎", ETH: "Ξ", BASE: "🔵", BNB: "◆" };
+  if (!data) {
+    return (
+      <div className={`bg-gradient-to-br ${colors[chain]} border border-vyra-border rounded-xl p-4 animate-pulse`}>
+        <div className="h-8 bg-vyra-bg/50 rounded mb-2" />
+        <div className="h-6 bg-vyra-bg/50 rounded w-2/3" />
+      </div>
+    );
+  }
+
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay }} className="bg-vyra-card border border-vyra-border rounded-xl p-4 hover:border-vyra-accent/30 transition-all">
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`bg-gradient-to-br ${colors[chain]} border border-vyra-border ${borderColors[chain]} rounded-xl p-4 text-left transition-all w-full`}
+    >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${chainColors[chain]} flex items-center justify-center text-sm`}>{chainIcons[chain]}</div>
+          {data.icon ? (
+            <img src={data.icon} alt={chain} className="w-8 h-8 rounded-full" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-vyra-bg flex items-center justify-center text-sm font-bold">{chain[0]}</div>
+          )}
           <div>
-            <div className="font-bold text-sm">{chain}</div>
-            <div className="text-[10px] text-vyra-text-dim">Health: {(health * 100).toFixed(0)}%</div>
+            <div className="font-bold text-sm">{data.name}</div>
+            <div className="text-[10px] text-vyra-text-dim">{chain}</div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-vyra-text-dim">5m Vol</div>
-          <div className="font-bold text-sm">${(volume / 1000).toFixed(0)}K</div>
+        <div className={`text-xs font-bold px-2 py-0.5 rounded ${data.change24h >= 0 ? "bg-vyra-green/20 text-vyra-green" : "bg-vyra-red/20 text-vyra-red"}`}>
+          {formatPercent(data.change24h)}
         </div>
       </div>
-      <div className="w-full bg-vyra-bg rounded-full h-1.5">
-        <motion.div initial={{ width: 0 }} animate={{ width: `${health * 100}%` }} transition={{ duration: 1, delay: delay + 0.3 }} className={`h-1.5 rounded-full bg-gradient-to-r ${chainColors[chain]}`} />
+      <div className="text-2xl font-bold mb-1">{formatUSD(data.price)}</div>
+      <div className="flex justify-between text-[10px] text-vyra-text-dim">
+        <span>Vol: {formatUSD(data.volume24h)}</span>
+        <span>{pairCount} pairs</span>
       </div>
+      <div className="mt-2 w-full bg-vyra-bg/50 rounded-full h-1">
+        <div
+          className="h-1 rounded-full"
+          style={{
+            width: `${Math.min(Math.abs(data.change24h) * 3, 100)}%`,
+            background: data.change24h >= 0 ? "#10b981" : "#ef4444",
+          }}
+        />
+      </div>
+    </motion.button>
+  );
+}
+
+// ============ WHALE EVENT ROW ============
+function WhaleEventRow({ event }: { event: WhaleEvent }) {
+  const typeColors: Record<string, string> = {
+    buy: "text-vyra-green bg-vyra-green/10",
+    sell: "text-vyra-red bg-vyra-red/10",
+    transfer: "text-vyra-yellow bg-vyra-yellow/10",
+    swap: "text-vyra-cyan bg-vyra-cyan/10",
+  };
+  const chainColors: Record<string, string> = {
+    SOL: "text-purple-400",
+    ETH: "text-blue-400",
+    BASE: "text-cyan-400",
+    BNB: "text-yellow-400",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="flex items-center gap-3 bg-vyra-bg rounded-lg px-3 py-2 hover:bg-vyra-surface/50 transition-all"
+    >
+      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${typeColors[event.type]}`}>
+        {event.type.toUpperCase()}
+      </span>
+      <span className={`text-xs font-bold w-10 ${chainColors[event.chain] || "text-vyra-text"}`}>{event.chain}</span>
+      <span className="text-xs font-mono text-vyra-text w-14">{event.token}</span>
+      <span className="text-xs font-mono text-vyra-green flex-1 text-right">{formatUSD(event.usdValue)}</span>
+      <span className="text-[10px] text-vyra-text-dim w-16 text-right">{event.protocol || "—"}</span>
+      <span className="text-[10px] text-vyra-text-dim w-12 text-right">{timeAgo(event.timestamp)}</span>
     </motion.div>
   );
 }
 
-function FeaturePanel({ features }: { features: LiquidityFeatures }) {
-  const featureList = [
-    { label: "Wallet Activity", value: features.walletActivity, color: "bg-vyra-cyan" },
-    { label: "Chain Rotation", value: features.chainRotationSpeed, color: "bg-vyra-purple" },
-    { label: "Volume Accel", value: (features.volumeAcceleration + 1) / 2, color: "bg-vyra-green" },
-    { label: "Smart Money", value: features.smartMoneyRatio, color: "bg-vyra-accent" },
-    { label: "Whale Density", value: features.whaleDensity, color: "bg-vyra-yellow" },
-    { label: "Narrative Heat", value: features.narrativeHeat, color: "bg-orange-500" },
-    { label: "Liquidity Depth", value: features.liquidityDepth, color: "bg-vyra-cyan" },
-    { label: "Token Age Dist", value: features.tokenAgeDistribution, color: "bg-vyra-red" },
-  ];
-  return (
-    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.4 }} className="bg-vyra-card border border-vyra-border rounded-xl p-5">
-      <h3 className="text-sm font-bold mb-4">🧠 Feature Vector</h3>
-      <div className="space-y-3">
-        {featureList.map((f) => (
-          <div key={f.label}>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-vyra-text-dim">{f.label}</span>
-              <span className="font-mono">{(f.value * 100).toFixed(0)}%</span>
-            </div>
-            <div className="w-full bg-vyra-bg rounded-full h-1.5">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${Math.max(f.value * 100, 2)}%` }} transition={{ duration: 0.8 }} className={`h-1.5 rounded-full ${f.color}`} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
+// ============ AGENT CARD ============
+function AgentCard({ agent, onClick }: { agent: AgentAnalysis; onClick: () => void }) {
+  const statusColors: Record<string, string> = {
+    active: "bg-vyra-green",
+    scanning: "bg-vyra-yellow",
+    alerting: "bg-vyra-red",
+  };
 
-function PredictionPanel({ predictions }: { predictions: any[] }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }} className="bg-vyra-card border border-vyra-border rounded-xl p-5">
-      <h3 className="text-sm font-bold mb-4">🔮 Liquidity Predictions</h3>
-      {predictions.length === 0 ? <p className="text-xs text-vyra-text-dim">Analyzing patterns...</p> : (
-        <div className="space-y-3">
-          {predictions.map((p, i) => (
-            <div key={i} className="bg-vyra-bg rounded-lg p-3 border border-vyra-border/50">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold">{p.fromChain}</span>
-                  <span className="text-vyra-text-dim">→</span>
-                  <span className="text-xs font-bold">{p.toChain}</span>
-                </div>
-                <span className="text-xs px-2 py-0.5 bg-vyra-accent/20 text-vyra-accent-light rounded">{p.timeWindow}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1"><div className="w-full bg-vyra-surface rounded-full h-1.5"><div className="h-1.5 rounded-full bg-gradient-to-r from-vyra-accent to-vyra-cyan" style={{ width: `${p.probability * 100}%` }} /></div></div>
-                <span className="text-xs font-bold text-vyra-cyan">{(p.probability * 100).toFixed(0)}%</span>
-              </div>
-              {p.drivers?.[0] && <p className="text-[10px] text-vyra-text-dim mt-2">{p.drivers[0]}</p>}
-            </div>
-          ))}
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="w-full bg-vyra-bg rounded-lg p-3 border border-vyra-border/50 hover:border-vyra-accent/30 transition-all text-left"
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-lg">{agent.emoji}</span>
+        <div className="flex-1">
+          <div className="text-xs font-bold">{agent.name}</div>
+          <div className="text-[9px] text-vyra-text-dim">{agent.role}</div>
         </div>
-      )}
-    </motion.div>
-  );
-}
-
-function AgentConsensusPanel({ result }: { result: any }) {
-  if (!result) return (<div className="bg-vyra-card border border-vyra-border rounded-xl p-5"><h3 className="text-sm font-bold mb-4">🤖 Agent Consensus</h3><p className="text-xs text-vyra-text-dim">Agents deliberating...</p></div>);
-  const { consensus, agentMessages } = result;
-  const decisionColors: Record<string, string> = { BUY: "text-vyra-green", SELL: "text-vyra-red", HOLD: "text-vyra-yellow", ROTATE: "text-vyra-purple", ALERT: "text-orange-400" };
-  return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.6 }} className="bg-vyra-card border border-vyra-border rounded-xl p-5">
-      <h3 className="text-sm font-bold mb-4">🤖 Agent Consensus</h3>
-      <div className="bg-vyra-bg rounded-lg p-3 mb-3 border border-vyra-border/50">
-        <div className="text-xs text-vyra-text-dim mb-1">Decision</div>
-        <div className={`text-2xl font-black ${decisionColors[consensus.decision] || "text-vyra-text"}`}>{consensus.decision}</div>
-        <div className="text-xs text-vyra-text-dim mt-1">Confidence: {(consensus.confidence * 100).toFixed(0)}%</div>
-      </div>
-      <div className="space-y-2">
-        {agentMessages?.map(({ agent, signal }: any) => (
-          <div key={agent.id} className="flex items-center gap-2 text-xs">
-            <span>{agent.emoji}</span>
-            <span className="text-vyra-text-dim w-16">{agent.name}</span>
-            <div className="flex-1 bg-vyra-bg rounded-full h-1"><div className="h-1 rounded-full bg-vyra-accent" style={{ width: `${signal.strength * 100}%` }} /></div>
-            <span className="w-8 text-right font-mono">{(signal.strength * 100).toFixed(0)}%</span>
-          </div>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-function TemporalPatternsPanel({ patterns }: { patterns: any[] }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="bg-vyra-card border border-vyra-border rounded-xl p-5">
-      <h3 className="text-sm font-bold mb-4">📡 Temporal Patterns</h3>
-      {patterns.length === 0 ? <p className="text-xs text-vyra-text-dim">Collecting temporal data...</p> : (
-        <div className="space-y-2">
-          {patterns.map((p, i) => (
-            <div key={i} className="bg-vyra-bg rounded-lg p-3 border border-vyra-border/50">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-vyra-cyan">{p.pattern}</span>
-                <span className="text-xs font-mono">{(p.strength * 100).toFixed(0)}%</span>
-              </div>
-              <p className="text-[10px] text-vyra-text-dim">{p.description}</p>
-            </div>
-          ))}
+        <div className="flex items-center gap-1">
+          <div className={`w-1.5 h-1.5 rounded-full ${statusColors[agent.status]} animate-pulse`} />
+          <span className="text-[9px] text-vyra-text-dim capitalize">{agent.status}</span>
         </div>
-      )}
-    </motion.div>
-  );
-}
-
-function EventStream({ events }: { events: any[] }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.8 }} className="bg-vyra-card border border-vyra-border rounded-xl p-5">
-      <h3 className="text-sm font-bold mb-4">⚡ Live Event Stream</h3>
-      <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-        {events.map((e, i) => (
-          <motion.div key={e.txHash + i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-[11px] py-1 px-2 rounded hover:bg-vyra-bg/50">
-            <span className="w-10 text-vyra-text-dim font-bold">{e.chain}</span>
-            <span className="w-20 text-vyra-accent font-mono">{e.tokenSymbol}</span>
-            <span className="w-16 text-vyra-text-dim">{e.eventType}</span>
-            <span className="flex-1 text-right font-mono text-vyra-green">${e.usdValue > 1000 ? `${(e.usdValue / 1000).toFixed(1)}K` : e.usdValue.toFixed(0)}</span>
-            <span className="w-16 text-right text-vyra-text-dim">{e.protocol}</span>
-          </motion.div>
-        ))}
       </div>
-    </motion.div>
+      <div className="text-[10px] text-vyra-text-dim mb-2 line-clamp-2">{agent.lastSignal}</div>
+      <div className="flex items-center justify-between">
+        <div className="text-[9px] text-vyra-text-dim">
+          Accuracy: <span className="text-vyra-text font-bold">{agent.accuracy}%</span>
+        </div>
+        <div className="w-16 bg-vyra-surface rounded-full h-1">
+          <div className="h-1 rounded-full bg-vyra-accent" style={{ width: `${agent.confidence}%` }} />
+        </div>
+      </div>
+    </motion.button>
   );
 }
 
+// ============ DEX PAIR ROW ============
+function DEXPairRow({ pair, chain }: { pair: DEXPair; chain: string }) {
+  const vol = pair.volume?.h24 || 0;
+  const liq = pair.liquidity?.usd || 0;
+  const change = pair.priceChange?.h24 || 0;
+
+  return (
+    <div className="bg-vyra-bg rounded px-2 py-1.5 hover:bg-vyra-surface/50 transition-all cursor-pointer">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-bold">{pair.baseToken.symbol}/{pair.quoteToken.symbol}</span>
+        <span className={`text-[9px] font-mono ${change >= 0 ? "text-vyra-green" : "text-vyra-red"}`}>
+          {change >= 0 ? "+" : ""}{change.toFixed(1)}%
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-[9px] text-vyra-text-dim">
+        <span>Liq: {formatUSD(liq)}</span>
+        <span>Vol: {formatUSD(vol)}</span>
+      </div>
+    </div>
+  );
+}
+
+// ============ STAT CARD ============
 function StatCard({ label, value, icon }: { label: string; value: string; icon: string }) {
   return (
     <div className="bg-vyra-card border border-vyra-border rounded-xl p-4 text-center">

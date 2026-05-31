@@ -27,11 +27,11 @@ function App() {
   if (path === "/") return <LandingPage navigate={navigate} />;
 
   const pages: Record<string, React.ReactNode> = {
-    "/dashboard": <DashboardPage />,
-    "/signals": <SignalsPage />,
-    "/agents": <AgentsPage />,
-    "/heatmap": <HeatmapPage />,
-    "/copilot": <CopilotPage />,
+    "/dashboard": <DashboardPage navigate={navigate} />,
+    "/signals": <SignalsPage navigate={navigate} />,
+    "/agents": <AgentsPage navigate={navigate} />,
+    "/heatmap": <HeatmapPage navigate={navigate} />,
+    "/copilot": <CopilotPage navigate={navigate} />,
   };
 
   return (

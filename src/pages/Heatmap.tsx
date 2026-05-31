@@ -1,77 +1,274 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useSignalStore } from "../lib/signal-store";
-import type { Chain } from "../lib/chain-adapters/types";
+import {
+  fetchAllChainData, fetchDEXPairs, generateWhaleEvents,
+  formatUSD, formatPercent, formatNumber,
+  type ChainData, type DEXPair, type WhaleEvent,
+} from "../lib/real-data";
 
-export default function HeatmapPage() {
-  const store = useSignalStore();
-  const chainConfig: Record<Chain, { color: string; gradient: string; icon: string }> = {
-    SOL: { color: "text-purple-400", gradient: "from-purple-500/20 to-green-500/20", icon: "◎" },
-    ETH: { color: "text-blue-400", gradient: "from-blue-500/20 to-purple-500/20", icon: "Ξ" },
-    BASE: { color: "text-cyan-400", gradient: "from-blue-400/20 to-cyan-400/20", icon: "🔵" },
-    BNB: { color: "text-yellow-400", gradient: "from-yellow-500/20 to-orange-500/20", icon: "◆" },
-  };
+export default function HeatmapPage({ navigate }: { navigate?: (to: string) => void }) {
+  const [chainData, setChainData] = useState<Record<string, ChainData>>({});
+  const [dexPairs, setDexPairs] = useState<Record<string, DEXPair[]>>({});
+  const [whaleEvents, setWhaleEvents] = useState<WhaleEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedChain, setSelectedChain] = useState<string>("SOL");
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const chains = await fetchAllChainData();
+        setChainData(chains);
+
+        const [solP, ethP, baseP, bnbP] = await Promise.all([
+          fetchDEXPairs("solana"), fetchDEXPairs("ethereum"),
+          fetchDEXPairs("base"), fetchDEXPairs("bnb"),
+        ]);
+
+        const pairs = { SOL: solP, ETH: ethP, BASE: baseP, BNB: bnbP };
+        setDexPairs(pairs);
+
+        const allWhales: WhaleEvent[] = [
+          ...generateWhaleEvents(solP, "SOL"),
+          ...generateWhaleEvents(ethP, "ETH"),
+          ...generateWhaleEvents(baseP, "BASE"),
+          ...generateWhaleEvents(bnbP, "BNB"),
+        ].sort((a, b) => b.usdValue - a.usdValue);
+
+        setWhaleEvents(allWhales);
+      } catch (e) {
+        console.error("Heatmap fetch error:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetch();
+    const interval = setInterval(fetch, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const chains = ["SOL", "ETH", "BASE", "BNB"] as const;
+  const currentPairs = dexPairs[selectedChain] || [];
+  const currentData = chainData[selectedChain];
+  const chainWhales = whaleEvents.filter((e) => e.chain === selectedChain);
+
+  const totalLiq = currentPairs.reduce((s, p) => s + (p.liquidity?.usd || 0), 0);
+  const totalVol = currentPairs.reduce((s, p) => s + (p.volume?.h24 || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-vyra-bg">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-vyra-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-vyra-text-dim">Loading liquidity data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-      <div><h1 className="text-2xl font-bold">🗺️ Liquidity Heatmap</h1><p className="text-sm text-vyra-text-dim">Cross-chain liquidity flow visualization</p></div>
-      <div className="grid grid-cols-2 gap-6">
-        {(["SOL", "ETH", "BASE", "BNB"] as Chain[]).map((chain, i) => {
-          const config = chainConfig[chain];
-          const events = store.events.filter(e => e.chain === chain);
-          const tokenCounts = new Map<string, number>();
-          events.forEach(e => tokenCounts.set(e.token, (tokenCounts.get(e.token) || 0) + e.usdValue));
-          const topTokens = Array.from(tokenCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
-          const health = store.chainHealth[chain];
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">🗺️ Liquidity Heatmap</h1>
+          <p className="text-sm text-vyra-text-dim">Cross-chain liquidity flow visualization • Real DEX data</p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-vyra-card rounded-lg border border-vyra-border">
+          <div className="w-2 h-2 rounded-full bg-vyra-green animate-pulse" />
+          <span className="text-xs">LIVE</span>
+        </div>
+      </div>
+
+      {/* Chain Selector */}
+      <div className="grid grid-cols-4 gap-4">
+        {chains.map((chain) => {
+          const data = chainData[chain];
+          const pairs = dexPairs[chain] || [];
+          const liq = pairs.reduce((s, p) => s + (p.liquidity?.usd || 0), 0);
+          const isSelected = selectedChain === chain;
+
           return (
-            <motion.div key={chain} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: i * 0.1 }}
-              className={`bg-gradient-to-br ${config.gradient} border border-vyra-border rounded-xl p-5 relative overflow-hidden`}>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2"><span className={`text-xl ${config.color}`}>{config.icon}</span><h3 className="font-bold text-lg">{chain}</h3></div>
-                  <div className="text-right"><div className="text-lg font-bold">${(store.chainVolumes[chain] / 1000).toFixed(0)}K</div><div className="text-[10px] text-vyra-text-dim">5m volume</div></div>
-                </div>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="relative w-16 h-16">
-                    <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
-                      <motion.circle cx="32" cy="32" r="28" fill="none" stroke={health > 0.6 ? "#10b981" : health > 0.3 ? "#f59e0b" : "#ef4444"} strokeWidth="4" strokeLinecap="round"
-                        strokeDasharray={`${health * 176} 176`} initial={{ strokeDasharray: "0 176" }} animate={{ strokeDasharray: `${health * 176} 176` }} transition={{ duration: 1.5, delay: i * 0.1 + 0.3 }} />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center text-xs font-bold">{(health * 100).toFixed(0)}%</div>
-                  </div>
-                  <div className="flex-1 space-y-1.5">
-                    {[{ label: "Activity", val: store.features.walletActivity }, { label: "Smart $", val: store.features.smartMoneyRatio }, { label: "Depth", val: store.features.liquidityDepth }].map(f => (
-                      <div key={f.label} className="flex items-center gap-2 text-xs">
-                        <span className="text-vyra-text-dim w-14">{f.label}</span>
-                        <div className="flex-1 bg-vyra-bg/50 rounded-full h-1"><div className="h-1 rounded-full bg-vyra-accent" style={{ width: `${f.val * 100}%` }} /></div>
-                        <span className="w-8 text-right font-mono text-[10px]">{(f.val * 100).toFixed(0)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {topTokens.map(([token, vol]) => <span key={token} className="px-2 py-1 bg-vyra-bg/50 rounded text-[10px] font-mono">{token} <span className="text-vyra-green">${(vol / 1000).toFixed(0)}K</span></span>)}
+            <motion.button
+              key={chain}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedChain(chain)}
+              className={`rounded-xl p-4 text-left transition-all border ${
+                isSelected
+                  ? "border-vyra-accent/50 bg-vyra-accent/10"
+                  : "border-vyra-border bg-vyra-card hover:border-vyra-accent/20"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                {data?.icon ? (
+                  <img src={data.icon} alt={chain} className="w-8 h-8 rounded-full" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-vyra-bg flex items-center justify-center text-sm font-bold">{chain[0]}</div>
+                )}
+                <div>
+                  <div className="font-bold text-sm">{data?.name || chain}</div>
+                  <div className="text-[10px] text-vyra-text-dim">{chain}</div>
                 </div>
               </div>
-            </motion.div>
+              {data && (
+                <>
+                  <div className="text-lg font-bold">{formatUSD(data.price)}</div>
+                  <div className="flex justify-between text-[10px] text-vyra-text-dim mt-1">
+                    <span className={data.change24h >= 0 ? "text-vyra-green" : "text-vyra-red"}>
+                      {formatPercent(data.change24h)}
+                    </span>
+                    <span>Liq: {formatUSD(liq)}</span>
+                  </div>
+                  <div className="text-[10px] text-vyra-text-dim mt-0.5">{pairs.length} DEX pairs</div>
+                </>
+              )}
+            </motion.button>
           );
         })}
       </div>
+
+      {/* Selected Chain Detail */}
+      <div className="grid grid-cols-3 gap-4">
+        {/* Chain Stats */}
+        <div className="bg-vyra-card border border-vyra-border rounded-xl p-5">
+          <h3 className="text-sm font-bold mb-4">{selectedChain} Chain Stats</h3>
+          {currentData && (
+            <div className="space-y-3">
+              {[
+                { label: "Price", value: formatUSD(currentData.price) },
+                { label: "24h Change", value: formatPercent(currentData.change24h), color: currentData.change24h >= 0 ? "text-vyra-green" : "text-vyra-red" },
+                { label: "24h Volume", value: formatUSD(currentData.volume24h) },
+                { label: "Market Cap", value: formatUSD(currentData.marketCap) },
+                { label: "DEX Liquidity", value: formatUSD(totalLiq) },
+                { label: "DEX Volume (24h)", value: formatUSD(totalVol) },
+                { label: "DEX Pairs", value: currentPairs.length.toString() },
+                { label: "Whale Events", value: chainWhales.length.toString() },
+              ].map((stat) => (
+                <div key={stat.label} className="flex justify-between text-xs">
+                  <span className="text-vyra-text-dim">{stat.label}</span>
+                  <span className={`font-bold ${stat.color || "text-vyra-text"}`}>{stat.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Top DEX Pairs */}
+        <div className="col-span-2 bg-vyra-card border border-vyra-border rounded-xl p-5">
+          <h3 className="text-sm font-bold mb-4">🔥 Top {selectedChain} DEX Pairs by Liquidity</h3>
+          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+            {currentPairs.slice(0, 20).map((pair, i) => (
+              <DEXPairDetail key={i} pair={pair} rank={i + 1} />
+            ))}
+            {currentPairs.length === 0 && (
+              <p className="text-vyra-text-dim text-sm">No DEX data available</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Liquidity Heatmap Grid */}
       <div className="bg-vyra-card border border-vyra-border rounded-xl p-5">
-        <h3 className="text-sm font-bold mb-4">🔥 Token Heat Map</h3>
-        <div className="grid grid-cols-6 gap-3">
-          {(() => {
-            const tokenData = new Map<string, { volume: number; count: number }>();
-            store.events.forEach(e => { const d = tokenData.get(e.token) || { volume: 0, count: 0 }; d.volume += e.usdValue; d.count++; tokenData.set(e.token, d); });
-            const sorted = Array.from(tokenData.entries()).sort((a, b) => b[1].volume - a[1].volume).slice(0, 12);
-            const maxVol = sorted[0]?.[1].volume || 1;
-            return sorted.map(([token, data], i) => (
-              <motion.div key={token} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                className="rounded-lg p-3 text-center border border-vyra-border/50" style={{ background: `rgba(99, 102, 241, ${(data.volume / maxVol) * 0.3})` }}>
-                <div className="font-bold text-sm">{token}</div>
-                <div className="text-xs text-vyra-green font-mono">${(data.volume / 1000).toFixed(0)}K</div>
-                <div className="text-[9px] text-vyra-text-dim">{data.count} txs</div>
+        <h3 className="text-sm font-bold mb-4">💧 Liquidity Heat Map</h3>
+        <div className="grid grid-cols-10 gap-2">
+          {currentPairs.slice(0, 50).map((pair, i) => {
+            const liq = pair.liquidity?.usd || 0;
+            const maxLiq = (currentPairs[0]?.liquidity?.usd || 1);
+            const intensity = liq / maxLiq;
+            const change = pair.priceChange?.h24 || 0;
+
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.02 }}
+                className="rounded-lg p-2 text-center border border-vyra-border/30 cursor-pointer hover:border-vyra-accent/30 transition-all"
+                style={{
+                  background: `rgba(99, 102, 241, ${intensity * 0.4})`,
+                }}
+                title={`${pair.baseToken.symbol}/${pair.quoteToken.symbol} — Liq: ${formatUSD(liq)}`}
+              >
+                <div className="text-[10px] font-bold truncate">{pair.baseToken.symbol}</div>
+                <div className="text-[8px] text-vyra-text-dim">{pair.dexId}</div>
+                <div className={`text-[9px] font-mono ${change >= 0 ? "text-vyra-green" : "text-vyra-red"}`}>
+                  {change >= 0 ? "+" : ""}{change.toFixed(1)}%
+                </div>
               </motion.div>
-            ));
-          })()}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Whale Flow */}
+      <div className="bg-vyra-card border border-vyra-border rounded-xl p-5">
+        <h3 className="text-sm font-bold mb-4">🐋 {selectedChain} Whale Flow</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <div className="text-xs text-vyra-text-dim mb-2">Top Buys</div>
+            <div className="space-y-1.5">
+              {chainWhales.filter((e) => e.type === "buy").slice(0, 5).map((e) => (
+                <div key={e.id} className="flex items-center justify-between bg-vyra-bg rounded px-3 py-2">
+                  <span className="text-xs font-bold">{e.token}</span>
+                  <span className="text-xs font-mono text-vyra-green">{formatUSD(e.usdValue)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-vyra-text-dim mb-2">Top Sells</div>
+            <div className="space-y-1.5">
+              {chainWhales.filter((e) => e.type === "sell").slice(0, 5).map((e) => (
+                <div key={e.id} className="flex items-center justify-between bg-vyra-bg rounded px-3 py-2">
+                  <span className="text-xs font-bold">{e.token}</span>
+                  <span className="text-xs font-mono text-vyra-red">{formatUSD(e.usdValue)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DEXPairDetail({ pair, rank }: { pair: DEXPair; rank: number }) {
+  const change = pair.priceChange?.h24 || 0;
+  const liq = pair.liquidity?.usd || 0;
+  const vol = pair.volume?.h24 || 0;
+  const buys = pair.txns?.h24?.buys || 0;
+  const sells = pair.txns?.h24?.sells || 0;
+
+  return (
+    <div className="bg-vyra-bg rounded-lg p-3 hover:bg-vyra-surface/50 transition-all">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-vyra-text-dim font-bold">#{rank}</span>
+          <span className="text-xs font-bold">{pair.baseToken.symbol}/{pair.quoteToken.symbol}</span>
+          <span className="text-[9px] text-vyra-text-dim bg-vyra-surface px-1.5 py-0.5 rounded">{pair.dexId}</span>
+        </div>
+        <span className={`text-xs font-bold ${change >= 0 ? "text-vyra-green" : "text-vyra-red"}`}>
+          {change >= 0 ? "+" : ""}{change.toFixed(2)}%
+        </span>
+      </div>
+      <div className="grid grid-cols-4 gap-2 text-[10px]">
+        <div>
+          <span className="text-vyra-text-dim">Price: </span>
+          <span className="font-mono">${parseFloat(pair.priceUsd || "0").toFixed(4)}</span>
+        </div>
+        <div>
+          <span className="text-vyra-text-dim">Liq: </span>
+          <span className="font-mono text-vyra-cyan">{formatUSD(liq)}</span>
+        </div>
+        <div>
+          <span className="text-vyra-text-dim">Vol: </span>
+          <span className="font-mono">{formatUSD(vol)}</span>
+        </div>
+        <div>
+          <span className="text-vyra-text-dim">Txns: </span>
+          <span className="font-mono text-vyra-green">{buys}B</span>
+          <span className="text-vyra-text-dim"> / </span>
+          <span className="font-mono text-vyra-red">{sells}S</span>
         </div>
       </div>
     </div>

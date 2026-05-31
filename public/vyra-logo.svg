@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6d28d9"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Left taper -->
+  <path d="M15 95 C18 90 22 85 28 78" stroke="url(#g1)" stroke-width="5" stroke-linecap="round" fill="none"/>
+  
+  <!-- Main wave body — thick ribbon style -->
+  <path d="M28 78 C35 68 45 55 58 48 C65 44 72 42 78 45 C84 48 88 55 90 62 
+           C92 55 96 48 102 45 C108 42 115 44 122 48 C135 55 145 68 152 78 
+           C158 72 165 68 172 70 C178 72 182 78 185 85"
+        stroke="url(#g2)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Secondary peak -->
+  <path d="M48 58 C55 50 65 46 72 52 C79 58 85 65 92 72"
+        stroke="url(#g1)" stroke-width="5" stroke-linecap="round" opacity="0.7" fill="none"/>
+
+  <!-- Right taper -->
+  <path d="M168 68 C175 72 182 80 188 90" stroke="url(#g1)" stroke-width="5" stroke-linecap="round" fill="none"/>
+
+  <!-- Center V dip accent -->
+  <path d="M78 45 L88 38 L98 52"
+        stroke="#22d3ee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- VYRA text — outline stroke style -->
+  <text x="100" y="190" text-anchor="middle" 
+        font-family="'JetBrains Mono', 'Fira Code', ui-monospace, monospace" 
+        font-size="34" font-weight="700" 
+        fill="none" stroke="#a1a1aa" stroke-width="0.8" 
+        letter-spacing="6">VYRA</text>
+</svg>

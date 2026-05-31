@@ -25,7 +25,7 @@ function AppLayout() {
         <Link to="/" className="p-6 border-b border-vyra-border block">
           <div className="flex items-center gap-3">
             <img
-              src="/vyra-logo.jpg"
+              src="/vyra-logo.svg"
               alt="VYRA"
               className="w-10 h-10 object-contain rounded-lg"
             />

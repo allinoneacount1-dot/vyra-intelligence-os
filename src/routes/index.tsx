@@ -28,7 +28,7 @@ function LandingPage() {
           className="mb-8"
         >
           <img
-            src="/vyra-logo.jpg"
+            src="/vyra-logo.svg"
             alt="VYRA"
             className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_30px_rgba(99,102,241,0.4)]"
           />

@@ -12,7 +12,7 @@ export default function LandingPage({ navigate }: { navigate: (to: string) => vo
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="mb-8">
-          <img src="/vyra-logo.jpg" alt="VYRA" className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_30px_rgba(99,102,241,0.4)]" />
+          <img src="/vyra-logo.svg" alt="VYRA" className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_30px_rgba(99,102,241,0.4)]" />
         </motion.div>
 
         <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="text-6xl md:text-8xl font-black tracking-tighter mb-4">

@@ -4,7 +4,6 @@ import { Menu, X, ChevronRight } from "lucide-react";
 import "./styles/app.css";
 
 // Pages
-import LandingPage from "./pages/Landing";
 import DashboardPage from "./pages/Dashboard";
 import SignalsPage from "./pages/Signals";
 import AgentsPage from "./pages/Agents";
@@ -63,8 +62,12 @@ function App() {
     setDrawerOpen(false);
   }, []);
 
-  // Landing page — full width, no sidebar
-  if (path === "/") return <LandingPage navigate={navigate} />;
+  // Root path — redirect to dashboard
+  if (path === "/") {
+    window.history.replaceState({}, "", "/dashboard");
+    setPath("/dashboard");
+    return null;
+  }
 
   // Token detail page
   if (path.startsWith("/token/")) {

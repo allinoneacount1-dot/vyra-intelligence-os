@@ -1,118 +1,148 @@
 import { motion } from "framer-motion";
+import { ArrowRight, Sparkles, Shield, Zap } from "lucide-react";
 
 export default function LandingPage({ navigate }: { navigate: (to: string) => void }) {
   return (
     <div className="min-h-screen bg-vyra-bg relative overflow-hidden">
-      {/* Background grid */}
+      {/* Background grid — subtle */}
       <div
-        className="absolute inset-0 opacity-5"
+        className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(99,102,241,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.3) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
+            "linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
         }}
       />
 
-      {/* Gradient orbs */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 md:w-96 md:h-96 bg-vyra-accent/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 md:w-96 md:h-96 bg-vyra-cyan/10 rounded-full blur-3xl" />
+      {/* Gradient orbs — premium */}
+      <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-vyra-accent/[0.07] rounded-full blur-[120px]" />
+      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-vyra-cyan/[0.05] rounded-full blur-[120px]" />
 
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 md:px-6">
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="mb-6 md:mb-8"
+      {/* Navbar */}
+      <nav className="relative z-20 flex items-center justify-between px-6 md:px-10 py-5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-vyra-accent to-vyra-cyan flex items-center justify-center text-white font-black text-sm">
+            V
+          </div>
+          <span className="font-mono font-bold text-sm tracking-[0.2em] text-vyra-text">VYRA</span>
+        </div>
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="flex items-center gap-2 px-4 py-2 glass rounded-lg text-sm font-medium text-vyra-text hover:bg-vyra-card-hover transition-all"
         >
-          <img
-            src="/vyra-logo-new.png"
-            alt="VYRA"
-            className="w-32 h-32 md:w-48 md:h-48 object-contain mx-auto drop-shadow-[0_0_30px_rgba(99,102,241,0.4)]"
-          />
+          Launch <ArrowRight size={14} />
+        </button>
+      </nav>
+
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6">
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-6"
+        >
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 glass rounded-full text-caption text-vyra-text-secondary">
+            <Sparkles size={12} className="text-vyra-accent" />
+            AI-Powered Intelligence OS
+          </span>
         </motion.div>
 
-        {/* Title — responsive font */}
+        {/* Title */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-3 md:mb-4"
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="text-display text-center mb-4 tracking-tight"
         >
+          <span className="text-vyra-text">Multi-Chain</span>
+          <br />
           <span className="bg-gradient-to-r from-vyra-accent via-vyra-cyan to-vyra-green bg-clip-text text-transparent">
-            VYRA
+            Liquidity Intelligence
           </span>
         </motion.h1>
 
-        {/* Subtitle — responsive */}
+        {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-lg md:text-xl lg:text-2xl text-vyra-text-dim text-center max-w-2xl mb-2 font-light px-4"
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="text-body text-vyra-text-secondary text-center max-w-lg mb-10 leading-relaxed"
         >
-          Multi-Chain Liquidity Intelligence OS
-        </motion.p>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-xs md:text-sm text-vyra-text-dim text-center max-w-xl mb-8 md:mb-12 px-4"
-        >
-          🧠 AI Prediction Brain &nbsp;•&nbsp; 🤖 Autonomous Agent Society &nbsp;•&nbsp; 🌐 4 Chains &nbsp;•&nbsp; ⚡ Real-time Alpha
+          Track capital rotation across Solana, Ethereum, Base & BNB.
+          AI agents detect whale movements before they hit the tape.
         </motion.p>
 
         {/* CTA buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full sm:w-auto px-4"
+          transition={{ duration: 0.7, delay: 0.3 }}
+          className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto"
         >
           <button
             onClick={() => navigate("/dashboard")}
-            className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-vyra-accent to-vyra-cyan rounded-xl text-white font-bold text-base md:text-lg hover:shadow-lg hover:shadow-vyra-accent/30 transition-all duration-300 hover:scale-105 glow-accent"
+            className="group px-8 py-3.5 bg-vyra-accent hover:bg-vyra-accent-light rounded-xl text-white font-semibold text-sm transition-all hover:shadow-glow-accent flex items-center justify-center gap-2"
           >
-            ⚡ Launch Intelligence OS
+            Launch Intelligence OS
+            <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
           </button>
           <button
-            onClick={() => navigate("/agents")}
-            className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 border border-vyra-border rounded-xl text-vyra-text font-medium hover:bg-vyra-card transition-all duration-300 text-base md:text-lg"
+            onClick={() => navigate("/copilot")}
+            className="px-8 py-3.5 glass rounded-xl text-vyra-text font-medium text-sm hover:bg-vyra-card-hover transition-all flex items-center justify-center gap-2"
           >
-            🤖 Meet the Agents
+            Try AI Copilot
           </button>
         </motion.div>
 
-        {/* Stats bar — responsive grid */}
+        {/* Feature pills */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-12 md:mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12 text-center px-4"
+          transition={{ duration: 0.7, delay: 0.4 }}
+          className="mt-14 flex flex-wrap justify-center gap-3"
         >
           {[
-            { label: "Chains", value: "4", icon: "🌐" },
-            { label: "Agents", value: "4", icon: "🤖" },
-            { label: "Signals/sec", value: "2+", icon: "⚡" },
-            { label: "Prediction", value: "AI", icon: "🧠" },
+            { icon: <Zap size={14} />, label: "Real-time Signals" },
+            { icon: <Shield size={14} />, label: "Whale Tracking" },
+            { icon: <Sparkles size={14} />, label: "AI Predictions" },
+          ].map((f) => (
+            <span key={f.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 glass-subtle rounded-full text-caption text-vyra-text-dim">
+              {f.icon} {f.label}
+            </span>
+          ))}
+        </motion.div>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, delay: 0.5 }}
+          className="mt-16 grid grid-cols-4 gap-8 md:gap-16 text-center"
+        >
+          {[
+            { label: "Chains", value: "4" },
+            { label: "AI Agents", value: "4" },
+            { label: "Signal/sec", value: "2+" },
+            { label: "Uptime", value: "99.9%" },
           ].map((stat) => (
             <div key={stat.label}>
-              <div className="text-xl md:text-2xl mb-1">{stat.icon}</div>
-              <div className="text-lg md:text-xl font-bold text-vyra-text">{stat.value}</div>
-              <div className="text-[10px] md:text-xs text-vyra-text-dim">{stat.label}</div>
+              <div className="text-title font-mono font-bold text-vyra-text">{stat.value}</div>
+              <div className="text-caption mt-0.5">{stat.label}</div>
             </div>
           ))}
         </motion.div>
 
-        {/* Tech footer */}
+        {/* Bottom tagline */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 1 }}
-          className="absolute bottom-4 md:bottom-8 text-[10px] md:text-xs text-vyra-text-dim/50 px-4 text-center"
+          transition={{ duration: 0.7, delay: 0.6 }}
+          className="absolute bottom-8 text-center"
         >
-          Built with TanStack Start • React 19 • Tailwind 4 • Framer Motion
+          <p className="text-[10px] font-mono text-vyra-text-dim/40 tracking-wider">
+            BUILT WITH TANSTACK · REACT 19 · TAILWIND 4 · FRAMER MOTION
+          </p>
         </motion.div>
       </div>
     </div>

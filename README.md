@@ -209,6 +209,95 @@ npm run preview
 
 ---
 
+## 🖥️ WSL Autostart Guide
+
+> **Goal:** Pas WSL dinyalakan, semua langsung auto-activate. Tinggal buka Telegram, langsung bisa ngobrol sama Rachel.
+
+### Architecture
+
+```
+Windows Login
+    │
+    ▼
+Task Scheduler (VYRA-Autostart)
+    │
+    ▼
+wsl.exe → ~/.hermes/auto-start.sh
+    │
+    ├── [1/3] Qdrant (RAG Vector DB)     → localhost:6333
+    ├── [2/3] Hermes Gateway              → localhost:3000
+    └── [3/3] Health Check                → Status report
+    │
+    ▼
+Telegram → Rachel (OWL) ready to chat ✅
+```
+
+### One-Time Setup
+
+#### Step 1: Register Windows Task Scheduler
+
+```powershell
+# Run as Administrator
+schtasks /create /tn "VYRA-Autostart" /tr "wsl.exe -d Ubuntu-24.04 -e bash /home/marco/.hermes/auto-start.sh" /sc onlogon /rl highest /f
+```
+
+Or double-click `vyra-setup-task.bat` on Desktop (Run as Administrator).
+
+#### Step 2: Verify Task
+
+```powershell
+schtasks /query /tn "VYRA-Autostart" /v /fo list
+```
+
+#### Step 3: Test
+
+```powershell
+schtasks /run /tn "VYRA-Autostart"
+```
+
+### What Auto-Starts
+
+| Service | Port | Purpose | Check |
+|---|---|---|---|
+| **Qdrant** | 6333 | RAG Vector DB (2,417 knowledge points) | `curl localhost:6333/health` |
+| **Hermes Gateway** | 3000 | AI Agent Gateway (Telegram, WhatsApp) | `curl localhost:3000/health` |
+| **Cron Jobs** | — | Daily crypto price update (21:00 WIB) | `hermes cron list` |
+
+### Manual Commands
+
+```bash
+# Check all services
+~/.hermes/auto-start.sh
+
+# Start Qdrant only
+cd ~/qdrant && nohup ./qdrant > ~/qdrant.log 2>&1 &
+
+# Start Hermes only
+source ~/.hermes/auto-gateway.sh
+
+# Check Qdrant collections
+/home/marco/.venv/bin/python3 -c "
+from qdrant_client import QdrantClient
+c = QdrantClient('localhost', 6333)
+print(f'Collections: {len(c.get_collections().collections)}')
+"
+
+# View logs
+tail -f ~/qdrant.log
+```
+
+### Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| Qdrant won't start | `pkill qdrant && cd ~/qdrant && ./qdrant` |
+| Hermes won't start | `source ~/.hermes/auto-gateway.sh` |
+| Task not running | `schtasks /run /tn "VYRA-Autostart"` |
+| Port 6333 in use | `lsof -i :6333` then `kill <PID>` |
+| WSL not starting | `wsl --shutdown` then reopen |
+
+---
+
 ## 📋 Roadmap
 
 - [x] Real-time signal engine
@@ -218,6 +307,7 @@ npm run preview
 - [x] AI Copilot with live data
 - [x] Wallet connect (Phantom, MetaMask, Trust Wallet)
 - [x] Personalized dashboard with wallet context
+- [x] WSL autostart (Qdrant + Hermes Gateway)
 - [ ] On-chain wallet tracking (follow specific wallets)
 - [ ] Portfolio tracker with P&L
 - [ ] Alert system (push notifications)

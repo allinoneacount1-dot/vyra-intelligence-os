@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles, Shield, Zap, TrendingUp, Bot, BarChart3, Eye } fr
 
 export default function LandingPage({ navigate }: { navigate: (to: string) => void }) {
   return (
-    <div className="flex-1 min-h-screen bg-vyra-bg relative overflow-x-hidden overflow-y-auto">
+    <div className="h-full bg-vyra-bg relative overflow-y-auto overflow-x-hidden">
       {/* ═══ Background — same DNA as Dashboard ═══ */}
       <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
         {/* Grid pattern — very subtle */}

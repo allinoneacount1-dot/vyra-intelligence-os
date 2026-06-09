@@ -167,3 +167,86 @@ body {
 .animate-rotate-slow {
   animation: rotate-slow 8s linear infinite;
 }
+
+/* ---- Responsive helpers ---- */
+
+/* Container */
+.container-safe {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .container-safe {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/* Heatmap horizontal scroll on mobile */
+.heatmap-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.5rem;
+  min-width: 0;
+}
+
+.heatmap-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.heatmap-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-vyra-border);
+  border-radius: 2px;
+}
+
+/* Responsive grid KPI */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Font clamp helpers */
+.text-responsive-xl {
+  font-size: clamp(18px, 4vw, 32px);
+}
+
+.text-responsive-lg {
+  font-size: clamp(16px, 3vw, 24px);
+}
+
+.text-responsive-md {
+  font-size: clamp(14px, 2vw, 18px);
+}
+
+/* Prevent horizontal overflow */
+.no-overflow {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Grid responsive — auto-fit cards */
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}

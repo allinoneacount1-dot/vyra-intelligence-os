@@ -285,7 +285,7 @@ cat ~/.hermes/autostart.log
 
 | Service | Port | Purpose | Check |
 |---|---|---|---|
-| **Qdrant** | 6333 | RAG Vector DB (2,417 knowledge points, 23 collections) | `curl localhost:6333/health` |
+| **Qdrant** | 6333 | RAG Vector DB (2,417 knowledge points, 23 collections) | `curl localhost:6333/readyz` |
 | **Hermes Gateway** | internal | AI Agent Gateway (Telegram, WhatsApp) | `systemctl --user is-active hermes-gateway` |
 | **Cron Jobs** | — | Daily crypto price update (21:00 WIB) | `hermes cron list` |
 

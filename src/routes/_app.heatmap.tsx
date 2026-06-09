@@ -145,7 +145,7 @@ function HeatmapPage() {
 function ChainHeatmapCard({
   chain, volume, health, pairs, events, price, change24h, delay
 }: {
-  chain: Chain; volume: number; health: number; pairs: any[]: events: any[]; price: number; change24h: number; delay: number;
+  chain: Chain; volume: number; health: number; pairs: any[]; events: any[]; price: number; change24h: number; delay: number;
 }) {
   const chainConfig: Record<Chain, { color: string; gradient: string; icon: string }> = {
     SOL: { color: "text-purple-400", gradient: "from-purple-500/20 to-green-500/20", icon: "◎" },

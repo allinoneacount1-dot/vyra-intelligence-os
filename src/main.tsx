@@ -9,6 +9,11 @@ import SignalsPage from "./pages/Signals";
 import AgentsPage from "./pages/Agents";
 import HeatmapPage from "./pages/Heatmap";
 import CopilotPage from "./pages/Copilot";
+import TokenDetailPage from "./pages/TokenDetail";
+
+// Components
+import { WalletConnectButton, initWalletAutoConnect } from "./components/WalletConnect";
+import NewsFeed from "./components/NewsFeed";
 
 function App() {
   const [path, setPath] = useState(window.location.pathname);
@@ -24,7 +29,23 @@ function App() {
     setPath(to);
   };
 
+  // Landing page
   if (path === "/") return <LandingPage navigate={navigate} />;
+
+  // Token detail page
+  if (path.startsWith("/token/")) {
+    const parts = path.split("/");
+    const chain = parts[2];
+    const address = parts[3];
+    return (
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar path={path} navigate={navigate} />
+        <main className="flex-1 overflow-y-auto bg-vyra-bg">
+          <TokenDetailPageWrapper chain={chain} address={address} navigate={navigate} />
+        </main>
+      </div>
+    );
+  }
 
   const pages: Record<string, React.ReactNode> = {
     "/dashboard": <DashboardPage navigate={navigate} />,
@@ -42,6 +63,10 @@ function App() {
       </main>
     </div>
   );
+}
+
+function TokenDetailPageWrapper({ chain, address, navigate }: { chain: string; address: string; navigate: (to: string) => void }) {
+  return <TokenDetailPage />;
 }
 
 function Sidebar({ path, navigate }: { path: string; navigate: (to: string) => void }) {
@@ -89,6 +114,11 @@ function Sidebar({ path, navigate }: { path: string; navigate: (to: string) => v
         })}
       </nav>
 
+      {/* Wallet Connect */}
+      <div className="p-4 border-t border-vyra-border">
+        <WalletConnectButton />
+      </div>
+
       <div className="p-4 border-t border-vyra-border">
         <div className="flex items-center gap-2 text-xs text-vyra-text-dim">
           <div className="w-2 h-2 rounded-full bg-vyra-green animate-pulse" />
@@ -99,6 +129,9 @@ function Sidebar({ path, navigate }: { path: string; navigate: (to: string) => v
     </aside>
   );
 }
+
+// Initialize wallet auto-connect
+initWalletAutoConnect();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

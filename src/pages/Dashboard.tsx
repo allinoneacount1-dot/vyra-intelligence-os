@@ -64,6 +64,9 @@ export default function DashboardPage({ navigate }: { navigate?: (to: string) =>
   return (
     <div className="min-h-full bg-vyra-bg relative" onMouseMove={handleMouseMove}
       style={{ "--mouse-x": `${glowPos.x}%`, "--mouse-y": `${glowPos.y}%` } as React.CSSProperties}>
+      {/* VISIBLE TEST — remove after debug */}
+      <div className="bg-red-500 text-white p-2 text-center font-mono text-xs">DEBUG: Dashboard rendered</div>
+
       {/* Glow overlay */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-20 md:opacity-30"
         style={{ background: `radial-gradient(800px circle at ${glowPos.x}% ${glowPos.y}%, rgba(99,102,241,0.04), transparent 50%)` }} />

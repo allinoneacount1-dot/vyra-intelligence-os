@@ -4,7 +4,8 @@ import { fetchAllChainData, fetchDEXPairs, generateWhaleEvents, analyzeWithAgent
 import { processBatch, getSignalStats, type Signal } from "../lib/signal-engine";
 import { runAgentSociety, type ConsensusResult } from "../lib/agent-society";
 import { predictLiquidityFlows, extractFeatures, getAccuracy } from "../lib/prediction-brain";
-import { TrendingUp, TrendingDown, ArrowUpRight } from "lucide-react";
+import { useWalletStore } from "../lib/wallet-store";
+import { TrendingUp, TrendingDown, ArrowUpRight, Wallet } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════
    VYRA Dashboard — Premium Intelligence OS
@@ -13,6 +14,7 @@ import { TrendingUp, TrendingDown, ArrowUpRight } from "lucide-react";
 
 export default function DashboardPage({ navigate }: { navigate?: (to: string) => void }) {
   const nav = navigate || ((to: string) => { window.history.pushState({}, "", to); window.dispatchEvent(new PopStateEvent("popstate")); });
+  const wallet = useWalletStore();
   const [chainData, setChainData] = useState<Record<string, ChainData>>({});
   const [dexPairs, setDexPairs] = useState<Record<string, DEXPair[]>>({});
   const [whaleEvents, setWhaleEvents] = useState<WhaleEvent[]>([]);
@@ -74,12 +76,30 @@ export default function DashboardPage({ navigate }: { navigate?: (to: string) =>
         <section>
           <div className="glass rounded-2xl p-5 md:p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6">
-              {/* Left — Title */}
+              {/* Left — Title + Wallet */}
               <div className="space-y-2">
-                <div className="section-label text-vyra-accent">◉ VYRA Intelligence OS</div>
-                <h1 className="text-2xl md:text-3xl font-bold text-vyra-text leading-tight">Multi-Chain Liquidity Intelligence</h1>
+                <div className="flex items-center gap-3">
+                  <div className="section-label text-vyra-accent">◉ VYRA Intelligence OS</div>
+                  {wallet.isConnected && wallet.address && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-vyra-green/10 border border-vyra-green/20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-vyra-green animate-pulse-dot" />
+                      <span className="text-[10px] font-mono text-vyra-green">{wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}</span>
+                      {wallet.balance !== null && (
+                        <span className="text-[9px] font-mono text-gray-400">
+                          · {wallet.balance.toFixed(3)} {wallet.chainId === "solana" ? "SOL" : wallet.chainId === "bnb" ? "BNB" : "ETH"}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-vyra-text leading-tight">
+                  {wallet.isConnected ? `Welcome back` : "Multi-Chain Liquidity Intelligence"}
+                </h1>
                 <p className="text-sm text-gray-400 leading-relaxed max-w-xl">
-                  Track capital rotation across Solana, Ethereum, Base & BNB in real-time. AI-powered signals detect whale movements before they hit the tape.
+                  {wallet.isConnected
+                    ? `Tracking ${wallet.chainId === "solana" ? "Solana" : wallet.chainId === "bnb" ? "BNB" : wallet.chainId === "base" ? "Base" : "Ethereum"} network. AI agents are monitoring your chain in real-time.`
+                    : "Track capital rotation across Solana, Ethereum, Base & BNB in real-time. AI-powered signals detect whale movements before they hit the tape."
+                  }
                 </p>
               </div>
               {/* Right — Metrics in one card */}
@@ -109,17 +129,23 @@ export default function DashboardPage({ navigate }: { navigate?: (to: string) =>
             {(["SOL", "ETH", "BASE", "BNB"] as const).map((c, i) => {
               const d = chainData[c];
               const isUp = d && d.change24h >= 0;
+              const chainMap: Record<string, string> = { solana: "SOL", ethereum: "ETH", base: "BASE", bnb: "BNB" };
+              const userChain = wallet.isConnected && wallet.chainId ? chainMap[wallet.chainId] : null;
+              const isUserChain = userChain === c;
               return (
                 <motion.button key={c} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
                   whileHover={{ y: -2 }} onClick={() => nav(`/heatmap?chain=${c.toLowerCase()}`)}
-                  className="glass hover-lift rounded-xl p-5 text-left group min-h-[180px] flex flex-col justify-between">
+                  className={`hover-lift rounded-xl p-5 text-left group min-h-[180px] flex flex-col justify-between ${isUserChain ? "glass-strong ring-1 ring-vyra-green/30" : "glass"}`}>
                   {/* Row 1: Asset info + Badge */}
                   <div className="flex items-start justify-between gap-2 mb-4">
                     <div className="flex items-center gap-2.5 min-w-0">
                       {d?.icon ? <img src={d.icon} alt={c} className="w-8 h-8 rounded-full shrink-0" />
                         : <div className="w-8 h-8 rounded-full bg-vyra-bg-elevated flex items-center justify-center text-xs font-bold font-mono shrink-0">{c[0]}</div>}
                       <div className="min-w-0">
-                        <div className="text-sm font-bold text-vyra-text truncate">{d?.name || c}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-bold text-vyra-text truncate">{d?.name || c}</span>
+                          {isUserChain && <span className="text-[8px] font-bold text-vyra-green bg-vyra-green/10 px-1.5 py-0.5 rounded shrink-0">YOURS</span>}
+                        </div>
                         <div className="text-[10px] text-gray-500 font-mono">{c}</div>
                       </div>
                     </div>

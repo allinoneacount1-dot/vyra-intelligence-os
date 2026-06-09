@@ -79,7 +79,7 @@ export default function DashboardPage({ navigate }: { navigate?: (to: string) =>
                 <div className="section-label text-vyra-accent">◉ VYRA Intelligence OS</div>
                 <h1 className="text-2xl md:text-3xl font-bold text-vyra-text leading-tight">Multi-Chain Liquidity Intelligence</h1>
                 <p className="text-sm text-gray-400 leading-relaxed max-w-xl">
-                  Track capital rotation across Solana, Ethereum, Base & BNB. AI-powered signals detect whale movements before they hit the tape.
+                  Track capital rotation across Solana, Ethereum, Base & BNB in real-time. AI-powered signals detect whale movements before they hit the tape.
                 </p>
               </div>
               {/* Right — Metrics in one card */}

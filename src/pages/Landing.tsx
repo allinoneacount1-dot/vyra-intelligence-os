@@ -21,9 +21,7 @@ export default function LandingPage({ navigate }: { navigate: (to: string) => vo
       {/* Navbar */}
       <nav className="relative z-20 flex items-center justify-between px-6 md:px-10 py-5">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-vyra-accent to-vyra-cyan flex items-center justify-center text-white font-black text-sm">
-            V
-          </div>
+          <img src="/vyra-logo.png" alt="VYRA" className="w-8 h-8 object-contain" />
           <span className="font-mono font-bold text-sm tracking-[0.2em] text-vyra-text">VYRA</span>
         </div>
         <button
@@ -46,6 +44,20 @@ export default function LandingPage({ navigate }: { navigate: (to: string) => vo
             <Sparkles size={12} className="text-vyra-accent" />
             AI-Powered Intelligence OS
           </span>
+        </motion.div>
+
+        {/* Logo Hero */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.15 }}
+          className="mb-8"
+        >
+          <img
+            src="/vyra-logo.png"
+            alt="VYRA"
+            className="w-28 h-28 md:w-36 md:h-36 mx-auto object-contain drop-shadow-[0_0_40px_rgba(99,102,241,0.25)]"
+          />
         </motion.div>
 
         {/* Title */}

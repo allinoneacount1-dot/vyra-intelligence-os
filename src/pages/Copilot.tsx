@@ -459,10 +459,13 @@ export default function CopilotPage() {
       {/* Header */}
       <div className="px-6 py-5 glass border-b border-vyra-border">
         <div className="flex items-center justify-between">
-          <div>
-            <div className="section-label text-vyra-accent mb-1">◇ AI COPILOT</div>
-            <h1 className="text-headline text-vyra-text">Ask VYRA</h1>
-            <p className="text-caption mt-0.5">Real-time intelligence assistant</p>
+          <div className="flex items-center gap-3">
+            <img src="/vyra-logo.png" alt="VYRA" className="w-8 h-8 object-contain" />
+            <div>
+              <div className="section-label text-vyra-accent mb-0.5">◇ AI COPILOT</div>
+              <h1 className="text-headline text-vyra-text">Ask VYRA</h1>
+              <p className="text-caption mt-0.5">Real-time intelligence assistant</p>
+            </div>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 glass-subtle rounded-lg">
             <div className="w-1.5 h-1.5 rounded-full bg-vyra-green animate-pulse-dot" />

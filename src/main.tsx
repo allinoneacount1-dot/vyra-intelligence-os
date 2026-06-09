@@ -101,9 +101,7 @@ function App() {
           >
             <Menu size={18} />
           </button>
-          <span className="font-mono font-bold text-xs tracking-[0.25em] text-vyra-text">
-            VYRA
-          </span>
+          <img src="/vyra-logo.png" alt="VYRA" className="w-6 h-6 object-contain" />
           <div className="w-9" />
         </header>
 
@@ -156,9 +154,7 @@ function Sidebar({
         className="mx-3 mt-4 mb-2 p-3 rounded-xl glass hover:bg-vyra-card-hover transition-all duration-200 block text-left group"
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-vyra-accent to-vyra-cyan flex items-center justify-center text-white font-black text-sm">
-            V
-          </div>
+          <img src="/vyra-logo.png" alt="VYRA" className="w-9 h-9 object-contain rounded-lg" />
           <div>
             <h1 className="text-sm font-bold tracking-wide text-vyra-text group-hover:text-white transition-colors">
               VYRA

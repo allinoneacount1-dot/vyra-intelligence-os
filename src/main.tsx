@@ -69,7 +69,7 @@ function App() {
   // Token detail page
   if (path.startsWith("/token/")) {
     return (
-      <div className="flex flex-1 min-h-0">
+      <div className="flex h-screen overflow-hidden">
         <main className="flex-1 overflow-y-auto overflow-x-hidden bg-vyra-bg min-h-0">
           <TokenDetailPage />
         </main>
@@ -86,7 +86,7 @@ function App() {
   };
 
   return (
-    <div className="flex flex-1 min-h-0">
+    <div className="flex h-screen overflow-hidden">
       {/* ===== Sidebar — Apple-level floating panel ===== */}
       <Sidebar path={path} navigate={navigate} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 

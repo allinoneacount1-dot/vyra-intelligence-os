@@ -69,8 +69,8 @@ function App() {
   // Token detail page
   if (path.startsWith("/token/")) {
     return (
-      <div className="flex h-screen overflow-hidden">
-        <main className="flex-1 overflow-y-auto bg-vyra-bg">
+      <div className="flex flex-1 min-h-0">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-vyra-bg min-h-0">
           <TokenDetailPage />
         </main>
       </div>
@@ -86,12 +86,12 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex flex-1 min-h-0">
       {/* ===== Sidebar — Apple-level floating panel ===== */}
       <Sidebar path={path} navigate={navigate} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       {/* ===== Main content ===== */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Mobile header bar */}
         <header className="md:hidden flex items-center justify-between px-4 py-3 glass border-b border-vyra-border shrink-0">
           <button
@@ -105,7 +105,7 @@ function App() {
           <div className="w-9" />
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-vyra-bg">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-vyra-bg min-h-0">
           {pages[path] || <DashboardPage />}
         </main>
       </div>
